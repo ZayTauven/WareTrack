@@ -1,8 +1,8 @@
 .inspector {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  bottom: 12px;
+  top: calc(var(--topbar-h) + 2 * var(--hud-gap));
+  right: var(--hud-gap);
+  bottom: var(--hud-gap);
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -143,22 +143,6 @@
 }
 
 /* Segmented gauges: the inspector's instrument language ------------------- */
-
-.meter {
-  display: grid;
-  gap: 3px;
-  height: 10px;
-}
-
-.meter__cell {
-  background: var(--cell-off);
-  border-radius: 1px;
-}
-
-.meter__cell[data-on] {
-  background: var(--tone);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--tone) 45%, transparent);
-}
 
 .gauge {
   margin-top: 14px;

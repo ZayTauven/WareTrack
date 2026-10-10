@@ -23,33 +23,13 @@ import {
   formatPercent,
   type Tone,
 } from './format.ts';
+import { Meter } from './Meter.tsx';
 import { useNow } from './useNow.ts';
 import './inspector.css';
 
 // ---------------------------------------------------------------------------
 // Building blocks
 // ---------------------------------------------------------------------------
-
-/** Segmented gauge, read like an instrument: lit cells = value. */
-function Meter({ value, label, tone, segments = 20 }: { value: number; label: string; tone: Tone; segments?: number }) {
-  const lit = Math.round(Math.min(1, Math.max(0, value)) * segments);
-  return (
-    <div
-      className="meter"
-      data-tone={tone}
-      role="meter"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(value * 100)}
-      style={{ gridTemplateColumns: `repeat(${segments}, 1fr)` }}
-    >
-      {Array.from({ length: segments }, (_, i) => (
-        <span key={i} className="meter__cell" data-on={i < lit || undefined} />
-      ))}
-    </div>
-  );
-}
 
 const STAGES = ['Road', 'Yard', 'Dock'] as const;
 const STAGE_OF: Record<TruckStatus, number> = { in_transit: 0, waiting: 1, loading: 2, unloading: 2, idle: -1 };

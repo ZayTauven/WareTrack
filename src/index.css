@@ -19,6 +19,9 @@
   --idle: #8a909a;
   --alert: #f0604f;
 
+  --topbar-h: 76px;
+  --hud-gap: 12px;
+
   --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -64,10 +67,46 @@ button {
   overflow: hidden;
 }
 
+/* Segmented gauge (ui/Meter.tsx): the HUD's instrument language */
+
+.meter {
+  display: grid;
+  gap: 3px;
+  height: 10px;
+}
+
+.meter__cell {
+  background: var(--cell-off);
+  border-radius: 1px;
+}
+
+.meter__cell[data-on] {
+  background: var(--tone);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tone) 45%, transparent);
+}
+
+.meter[data-variant='ticks'] {
+  gap: 2px;
+  height: 14px;
+}
+
+.meter[data-variant='ticks'] .meter__cell {
+  border-radius: 2px;
+}
+
+.meter[data-variant='ticks'] .meter__cell[data-on] {
+  box-shadow: none;
+}
+
+.hud-panel {
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.4);
+}
+
 .hint {
-  position: absolute;
-  left: 16px;
-  bottom: 12px;
   margin: 0;
   color: var(--muted);
   font: 400 11px/1 var(--font-mono);

@@ -1,7 +1,7 @@
 import { MapControls } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useCallback, useLayoutEffect, useRef, type ComponentRef } from 'react';
-import { MathUtils, Vector3, type DirectionalLight } from 'three';
+import { MathUtils, OrthographicCamera, Vector3, type DirectionalLight } from 'three';
 import type { FloorPoint, FloorRect } from '../data/index.ts';
 import { ISO_OFFSET } from './iso.ts';
 
@@ -18,19 +18,57 @@ function panTo(controls: Controls, x: number, z: number) {
   controls.object.position.z += dz;
 }
 
+/** Higher is snappier; ~1.5 s to settle across a 150 m site hop. */
+const FLY_RATE = 3;
+
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+interface StrategyCameraProps {
+  bounds: FloorRect;
+  /** Look-at point; changing it flies the camera there. */
+  focus: FloorPoint;
+  /** Zoom the camera settles on when it flies to a new focus. */
+  focusZoom: number;
+  minZoom: number;
+  maxZoom: number;
+}
+
 /**
  * RTS camera: drag to pan on the ground plane, wheel to zoom, no rotation.
  * The look-at point is clamped to `bounds` so the map can never be left.
+ * A new `focus` is reached with an eased flight; grabbing the map cancels it.
  */
-export function StrategyCamera({ bounds, focus, minZoom, maxZoom }: { bounds: FloorRect; focus: FloorPoint; minZoom: number; maxZoom: number }) {
+export function StrategyCamera({ bounds, focus, focusZoom, minZoom, maxZoom }: StrategyCameraProps) {
   const ref = useRef<Controls>(null);
+  const flight = useRef<FloorPoint | null>(null);
+  const mounted = useRef(false);
 
   useLayoutEffect(() => {
     const controls = ref.current;
     if (!controls) return;
+    if (mounted.current && !prefersReducedMotion()) {
+      flight.current = focus;
+      return;
+    }
+    mounted.current = true;
     panTo(controls, focus.x, focus.z);
     controls.update();
   }, [focus]);
+
+  useFrame((_, delta) => {
+    const controls = ref.current;
+    const goal = flight.current;
+    if (!controls || !goal) return;
+    const k = 1 - Math.exp(-delta * FLY_RATE);
+    panTo(controls, controls.target.x + (goal.x - controls.target.x) * k, controls.target.z + (goal.z - controls.target.z) * k);
+    const camera = controls.object;
+    if (camera instanceof OrthographicCamera) {
+      camera.zoom += (focusZoom - camera.zoom) * k;
+      camera.updateProjectionMatrix();
+    }
+    const settled = Math.hypot(goal.x - controls.target.x, goal.z - controls.target.z) < 0.05;
+    if (settled) flight.current = null;
+  });
 
   const clamp = useCallback(() => {
     const controls = ref.current;
@@ -42,7 +80,18 @@ export function StrategyCamera({ bounds, focus, minZoom, maxZoom }: { bounds: Fl
     );
   }, [bounds]);
 
-  return <MapControls ref={ref} makeDefault enableRotate={false} minZoom={minZoom} maxZoom={maxZoom} dampingFactor={0.12} onChange={clamp} />;
+  return (
+    <MapControls
+      ref={ref}
+      makeDefault
+      enableRotate={false}
+      minZoom={minZoom}
+      maxZoom={maxZoom}
+      dampingFactor={0.12}
+      onChange={clamp}
+      onStart={() => (flight.current = null)}
+    />
+  );
 }
 
 /** Low, from the camera's right: long shadows falling left across the floor. */

@@ -6,7 +6,7 @@ export type Tone = 'work' | 'ok' | 'transit' | 'idle' | 'alert';
 
 export const TRUCK_STATUS: Record<TruckStatus, { label: string; tone: Tone }> = {
   in_transit: { label: 'In transit', tone: 'transit' },
-  waiting: { label: 'Waiting in yard', tone: 'idle' },
+  waiting: { label: 'In yard', tone: 'idle' },
   loading: { label: 'Loading', tone: 'work' },
   unloading: { label: 'Unloading', tone: 'work' },
   idle: { label: 'Parked', tone: 'idle' },

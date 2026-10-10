@@ -5,6 +5,7 @@ import { ToneMappingMode } from 'postprocessing';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { FloorPoint, FloorRect, ForkliftId, Rack, Site, SiteId, TruckId, WarehouseData } from '../data/index.ts';
+import { truckMatches } from '../domain/kpis.ts';
 import { byId } from '../domain/selectors.ts';
 import { useWarehouse } from '../store/warehouseStore.ts';
 import { StrategyCamera, SunLight } from './camera.tsx';
@@ -43,7 +44,9 @@ function worldBounds(sites: WarehouseData['sites']): FloorRect {
 
 function TruckNode({ id }: { id: TruckId }) {
   const truck = useWarehouse((s) => byId(s.data.trucks, id));
-  if (!truck) return null;
+  // Filtered-out trucks are not rendered at all, so they cannot be clicked either.
+  const shown = useWarehouse((s) => (truck ? truckMatches(s.data, truck, s.filters) : false));
+  if (!truck || !shown) return null;
   return (
     <Selectable target={{ kind: 'truck', id }}>
       <Movable placement={truck}>
@@ -122,14 +125,15 @@ function SiteLayer({ site }: { site: Site }) {
 export function WarehouseScene() {
   const sites = useWarehouse((s) => s.data.sites);
   const racks = useWarehouse((s) => s.data.racks);
+  const siteId = useWarehouse((s) => s.siteId);
   const clearSelection = useWarehouse((s) => s.clearSelection);
 
   const origins = useMemo(() => new Map<SiteId, FloorPoint>(sites.map((s) => [s.id, s.origin])), [sites]);
   const bounds = useMemo(() => worldBounds(sites), [sites]);
   const focus = useMemo<FloorPoint>(() => {
-    const origin = sites[0]?.origin ?? { x: 0, z: 0 };
+    const origin = sites.find((s) => s.id === siteId)?.origin ?? { x: 0, z: 0 };
     return { x: origin.x + SITE_FOCUS.x, z: origin.z + SITE_FOCUS.z };
-  }, [sites]);
+  }, [sites, siteId]);
 
   return (
     <Canvas
@@ -142,7 +146,7 @@ export function WarehouseScene() {
       <color attach="background" args={[palette.void]} />
       <hemisphereLight args={['#eef1f6', '#4a3f36', 0.9]} />
       <SunLight />
-      <StrategyCamera bounds={bounds} focus={focus} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} />
+      <StrategyCamera bounds={bounds} focus={focus} focusZoom={INITIAL_ZOOM} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} />
 
       <mesh
         geometry={unitBox}
