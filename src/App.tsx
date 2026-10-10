@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { createSeed } from './data/index.ts';
 import { WarehouseScene } from './scene/WarehouseScene.tsx';
+import { useSimulation } from './store/warehouseStore.ts';
+import { Inspector } from './ui/Inspector.tsx';
 
 export default function App() {
-  const [data] = useState(createSeed);
+  useSimulation();
   return (
     <main className="app">
-      <WarehouseScene data={data} />
-      <p className="hint">Drag to pan · Scroll to zoom</p>
+      <WarehouseScene />
+      <Inspector />
+      <p className="hint">Drag to pan · Scroll to zoom · Click a unit to inspect</p>
     </main>
   );
 }

@@ -21,36 +21,33 @@ import type {
   UnitOfMeasure,
   WarehouseData,
 } from './types.ts';
+import {
+  CHARGER,
+  DOCK_COUNT,
+  FACING,
+  RACK_COLUMNS_X,
+  RACK_ROWS_Z,
+  dockX,
+  dockedTruck,
+  parkingSlot,
+  roadSlot,
+  stagingPoint,
+  yardSlot,
+} from './layout.ts';
 
 // ---------------------------------------------------------------------------
-// Layout. Every site uses the same building template; values are site-local.
+// Site template. Every site uses the same building; values are site-local.
 // ---------------------------------------------------------------------------
 
 const BUILDING = { width: 60, depth: 40 };
 const SITE_BOUNDS: FloorRect = { minX: -40, maxX: 40, minZ: -64, maxZ: 26 };
 const SITE_SPACING = 150;
-
-const DOCK_COUNT = 6;
-const DOCK_SPACING = 9;
 const DOCK_WALL_Z = -BUILDING.depth / 2;
-/** Distance from the dock door to the centre of a docked truck. */
-const DOCKED_TRUCK_OFFSET = 6;
 
-const YARD_WAITING_Z = -38;
-const YARD_PARKING_Z = -48;
-const ROAD_Z = -58;
-const STAGING_Z = -14;
-
-const RACK_COLUMNS_X = [-21, -7, 7, 21];
-const RACK_ROWS_Z = [-6, 3, 12];
 const RACK_SIZE = { length: 10, depth: 1.2, height: 4.5 };
 const RACK_LEVELS = 4;
 
-const FACING_YARD = 0;
-const FACING_BUILDING = Math.PI;
-const FACING_EAST = -Math.PI / 2;
-
-const dockX = (dockNumber: number) => -((DOCK_COUNT - 1) * DOCK_SPACING) / 2 + (dockNumber - 1) * DOCK_SPACING;
+const staging = (dockNumber: number): FloorPoint => stagingPoint({ x: dockX(dockNumber), z: DOCK_WALL_Z });
 
 // ---------------------------------------------------------------------------
 // Definitions. Times are minute offsets from `now`, so the data stays live.
@@ -91,14 +88,14 @@ const FORKLIFT_DEFS: {
   position: FloorPoint;
   rotationY: number;
 }[] = [
-  { id: 'forklift-401', name: 'Unit 401', site: 'oak', operator: 'Maria G.', status: 'idle', batteryPct: 65, shipment: null, position: { x: -28, z: -1.5 }, rotationY: FACING_EAST },
-  { id: 'forklift-402', name: 'Unit 402', site: 'oak', operator: 'Jamal R.', status: 'moving', batteryPct: 82, shipment: 'EXP-993-C', position: { x: dockX(4) + 2, z: STAGING_Z }, rotationY: FACING_YARD },
-  { id: 'forklift-403', name: 'Unit 403', site: 'oak', operator: 'Kenji T.', status: 'lifting', batteryPct: 47, shipment: 'S-1045A', position: { x: dockX(2) + 2, z: STAGING_Z }, rotationY: FACING_YARD },
-  { id: 'forklift-404', name: 'Unit 404', site: 'dal', operator: 'Luis M.', status: 'moving', batteryPct: 71, shipment: 'D-2201', position: { x: dockX(1) + 2, z: STAGING_Z }, rotationY: FACING_YARD },
-  { id: 'forklift-405', name: 'Unit 405', site: 'dal', operator: null, status: 'charging', batteryPct: 18, shipment: null, position: { x: 28, z: 17 }, rotationY: FACING_BUILDING },
-  { id: 'forklift-406', name: 'Unit 406', site: 'dal', operator: 'Aisha B.', status: 'lifting', batteryPct: 56, shipment: 'D-2202', position: { x: dockX(3) + 2, z: STAGING_Z }, rotationY: FACING_YARD },
-  { id: 'forklift-407', name: 'Unit 407', site: 'mia', operator: 'Carlos D.', status: 'moving', batteryPct: 90, shipment: 'M-3301', position: { x: dockX(5) + 2, z: STAGING_Z }, rotationY: FACING_YARD },
-  { id: 'forklift-408', name: 'Unit 408', site: 'mia', operator: null, status: 'maintenance', batteryPct: 40, shipment: null, position: { x: 28, z: 17 }, rotationY: FACING_BUILDING },
+  { id: 'forklift-401', name: 'Unit 401', site: 'oak', operator: 'Maria G.', status: 'idle', batteryPct: 65, shipment: null, position: { x: -28, z: -1.5 }, rotationY: FACING.east },
+  { id: 'forklift-402', name: 'Unit 402', site: 'oak', operator: 'Jamal R.', status: 'moving', batteryPct: 82, shipment: 'EXP-993-C', position: staging(4), rotationY: FACING.yard },
+  { id: 'forklift-403', name: 'Unit 403', site: 'oak', operator: 'Kenji T.', status: 'lifting', batteryPct: 47, shipment: 'S-1045A', position: staging(2), rotationY: FACING.yard },
+  { id: 'forklift-404', name: 'Unit 404', site: 'dal', operator: 'Luis M.', status: 'moving', batteryPct: 71, shipment: 'D-2201', position: staging(1), rotationY: FACING.yard },
+  { id: 'forklift-405', name: 'Unit 405', site: 'dal', operator: null, status: 'charging', batteryPct: 18, shipment: null, position: CHARGER, rotationY: FACING.building },
+  { id: 'forklift-406', name: 'Unit 406', site: 'dal', operator: 'Aisha B.', status: 'lifting', batteryPct: 56, shipment: 'D-2202', position: staging(3), rotationY: FACING.yard },
+  { id: 'forklift-407', name: 'Unit 407', site: 'mia', operator: 'Carlos D.', status: 'moving', batteryPct: 90, shipment: 'M-3301', position: staging(5), rotationY: FACING.yard },
+  { id: 'forklift-408', name: 'Unit 408', site: 'mia', operator: null, status: 'maintenance', batteryPct: 40, shipment: null, position: CHARGER, rotationY: FACING.building },
 ];
 
 type ItemDef = [sku: string, name: string, category: InventoryCategory, unit: UnitOfMeasure, quantity: number, reorderPoint: number];
@@ -212,13 +209,13 @@ function truckPlacement(def: (typeof TRUCK_DEFS)[number]) {
   switch (def.status) {
     case 'loading':
     case 'unloading':
-      return { position: { x: dockX(def.dock ?? 1), z: DOCK_WALL_Z - DOCKED_TRUCK_OFFSET }, rotationY: FACING_YARD };
+      return dockedTruck({ x: dockX(def.dock ?? 1), z: DOCK_WALL_Z });
     case 'waiting':
-      return { position: { x: -24 + slot * 12, z: YARD_WAITING_Z }, rotationY: FACING_BUILDING };
+      return yardSlot(slot);
     case 'idle':
-      return { position: { x: 24 - slot * 12, z: YARD_PARKING_Z }, rotationY: FACING_BUILDING };
+      return parkingSlot(slot);
     case 'in_transit':
-      return { position: { x: -30 + slot * 15, z: ROAD_Z }, rotationY: FACING_EAST };
+      return roadSlot(slot);
   }
 }
 
@@ -250,7 +247,7 @@ export function createSeed(now: Date = new Date()): WarehouseData {
         name: `Dock ${number}`,
         state: def.maintenanceDocks.includes(number) ? 'maintenance' : 'operational',
         position: { x: dockX(number), z: DOCK_WALL_Z },
-        rotationY: FACING_YARD,
+        rotationY: FACING.yard,
       } satisfies Dock;
     }),
   );

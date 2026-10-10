@@ -1,5 +1,6 @@
 import { Grid } from '@react-three/drei';
 import type { Dock, Site } from '../data/index.ts';
+import { ROAD_Z } from '../data/layout.ts';
 import { Block, DOCK_OPENING } from './models.tsx';
 import { palette } from './palette.ts';
 import { materials } from './resources.ts';
@@ -10,7 +11,6 @@ const CURB_HEIGHT = 1;
 const STRIPE_HEIGHT = 1.2;
 const LINE = 0.15;
 const BAY_LINE_LENGTH = 12;
-const ROAD_Z = -58;
 const ROAD_WIDTH = 8;
 const STAGING_DEPTH = 10.5;
 

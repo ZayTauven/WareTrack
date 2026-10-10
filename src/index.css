@@ -1,9 +1,32 @@
 :root {
   color-scheme: dark;
+
+  /* Surfaces */
   --bg: #111317;
-  --text-muted: #8b9099;
-  font-family: 'Inter', system-ui, sans-serif;
+  --panel: #16191e;
+  --panel-raised: #1d2127;
+  --line: #2a2f37;
+  --cell-off: #262a31;
+
+  /* Text */
+  --text: #ece7dd;
+  --muted: #8d929b;
+
+  /* States */
+  --amber: #f0a53a;
+  --ok: #5fcf8f;
+  --transit: #72aaf0;
+  --idle: #8a909a;
+  --alert: #f0604f;
+
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  font-family: var(--font-body);
+  color: var(--text);
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 *,
@@ -19,6 +42,22 @@ body,
   margin: 0;
 }
 
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+[data-tone='work'] { --tone: var(--amber); }
+[data-tone='ok'] { --tone: var(--ok); }
+[data-tone='transit'] { --tone: var(--transit); }
+[data-tone='idle'] { --tone: var(--idle); }
+[data-tone='alert'] { --tone: var(--alert); }
+
 .app {
   position: relative;
   height: 100%;
@@ -30,8 +69,9 @@ body,
   left: 16px;
   bottom: 12px;
   margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  color: var(--muted);
+  font: 400 11px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   pointer-events: none;
 }

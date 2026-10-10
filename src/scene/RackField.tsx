@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { Color, Matrix4, Quaternion, Vector3, type InstancedMesh, type Material } from 'three';
 import type { FloorPoint, Rack, SiteId } from '../data/index.ts';
+import { seededRandom } from '../domain/random.ts';
 import { palette } from './palette.ts';
 import { instanceTinted, materials, unitBox } from './resources.ts';
 
@@ -19,18 +20,6 @@ interface RackParts {
   decks: Matrix4[];
   boxes: Matrix4[];
   boxColors: Color[];
-}
-
-/** Deterministic PRNG so the stock filler looks identical on every load. */
-function seededRandom(key: string) {
-  let seed = 2166136261;
-  for (const char of key) seed = Math.imul(seed ^ char.charCodeAt(0), 16777619);
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 /** World-space instance matrices for every rack part, built once per rack list. */
