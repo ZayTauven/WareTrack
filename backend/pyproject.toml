@@ -1,0 +1,42 @@
+[project]
+name = "waretrack-api"
+version = "0.1.0"
+description = "WareTrack API: multi-tenant warehouse operations, REST + real-time."
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6.1.2",
+    "django-environ>=0.14.0",
+    "psycopg[binary]>=3.3.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-django>=4.14.0",
+    "ruff>=0.17.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = "--strict-markers"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["**/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "SIM", "RUF"]
+# Django declares Meta/admin options as plain mutable class attributes by design.
+ignore = ["RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+# Hand-aligned data tables read better one record per line.
+"apps/warehouse/seed.py" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "single"

@@ -37,6 +37,24 @@ src/ui/      HUD: top bar, filter dock, inspector panel
 - The 3D stack (three, R3F, drei, postprocessing) is split into a lazily loaded chunk;
   the HUD ships in ~80 kB gzipped.
 
+## Backend (`backend/`, in progress)
+
+Django + PostgreSQL, multi-tenant: `Organization` → `Membership` (role) → `Site` → docks,
+racks, trucks, forklifts, inventory, shipments. Invariants a row can express (a truck sits
+at a dock only while handling, one truck per dock, one active shipment per truck, …) are
+database constraints.
+
+```bash
+docker compose up -d --wait                # PostgreSQL on 5433, Redis on 6379
+cd backend
+cp .env.example .env                       # then set a secret key and demo password
+uv sync
+uv run python manage.py migrate
+uv run python manage.py seed_demo          # demo organization + owner account
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
+```
+
 ## Conventions
 
 Distances in metres, Y up, floor positions `{ x, z }` local to each site, `rotationY = 0`
