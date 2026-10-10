@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Front end
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Type check (includes the API contract check)
+        run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: API types match openapi.yaml
+        run: |
+          npm run api:types
+          git diff --exit-code -- src/api/schema.d.ts
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  backend:
+    name: Back end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: waretrack
+          POSTGRES_USER: waretrack
+          POSTGRES_PASSWORD: waretrack
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U waretrack -d waretrack"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-used-anywhere-else
+      DATABASE_URL: postgres://waretrack:waretrack@localhost:5432/waretrack
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - name: Migrations are up to date
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: OpenAPI contract is up to date
+        run: |
+          uv run python manage.py spectacular --validate --fail-on-warn --file ../openapi.yaml
+          git diff --exit-code -- ../openapi.yaml
+      - name: Production settings pass the deployment checks
+        env:
+          DJANGO_ALLOWED_HOSTS: ci.waretrack.test
+          JWT_SIGNING_KEY: ci-only-jwt-signing-key-not-used-anywhere-else
+        run: uv run python manage.py check --deploy --fail-level WARNING --settings=config.settings.prod
+      - run: uv run pytest
+      - name: Audit dependencies
+        run: |
+          uv export --format requirements-txt --no-hashes --no-dev --output-file "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit --requirement "$RUNNER_TEMP/requirements.txt" --progress-spinner off

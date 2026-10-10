@@ -63,6 +63,11 @@ DATABASES['default']['CONN_MAX_AGE'] = env.int('DB_CONN_MAX_AGE', default=60)
 DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
 AUTH_USER_MODEL = 'accounts.User'
+# Argon2 first (memory-hard); the others only verify hashes created before the switch.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 10}},
@@ -87,10 +92,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
     'DEFAULT_PARSER_CLASSES': ['rest_framework.parsers.JSONParser'],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_PAGINATION_CLASS': 'apps.warehouse.pagination.BoundedLimitOffsetPagination',
     'PAGE_SIZE': 100,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_THROTTLE_RATES': {'login': '10/min', 'refresh': '30/min'},
+    'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.UserRateThrottle'],
+    'DEFAULT_THROTTLE_RATES': {'user': '600/min', 'login': '10/min', 'refresh': '30/min'},
+    # Proxies in front of the app. Throttles identify clients by REMOTE_ADDR unless this says how
+    # many trusted X-Forwarded-For hops to skip; left unset, DRF would trust a client-supplied header
+    # and anyone could dodge the login throttle by sending a new X-Forwarded-For on every attempt.
+    'NUM_PROXIES': env.int('NUM_PROXIES', default=0),
 }
 
 SIMPLE_JWT = {
@@ -124,6 +134,23 @@ SPECTACULAR_SETTINGS = {
         'MembershipRoleEnum': 'apps.accounts.models.Membership.Role',
     },
 }
+
+# --- Logging --------------------------------------------------------------------
+
+# Containers log to stdout. Security events (bad Host headers, suspicious operations) are kept.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'plain': {'format': '{asctime} {levelname} {name} {message}', 'style': '{'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'plain'}},
+    'root': {'handlers': ['console'], 'level': env('LOG_LEVEL', default='INFO')},
+    'loggers': {
+        'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.request': {'handlers': ['console'], 'level': 'ERROR', 'propagate': False},
+    },
+}
+
+ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin/')
 
 # --- Real time ----------------------------------------------------------------
 
