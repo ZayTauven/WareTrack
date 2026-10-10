@@ -1,0 +1,68 @@
+Step 0 : Before Code 
+Generate a concept image first 
+ >>> Create a concept image of a 3D warehouse management app that look like a real-time strategy game. 
+
+Isometric camera, low-poly warehouse with loading docks, trucks, forklifts and shelving. Dark industrial UI with amber accents. Aside panel with ive status for the selected truck and a top bar with KPI cards. 
+
+16: clean, polished like a game screenshots.
+
+
+Prompt 1 : The data model 
+I am building WareTrack, a warehouse management app.
+The attached image shows the target look and feel.
+First, design only the data layer. No UI yet.
+
+Use TypeScript. Define types for Site, Dock, Truck, Forklift, Inventorytem and Shipment, with clear relations between them.
+
+Create realistic seed data: 3 sites, 6 docks per site, 12 trucks, 8 forklifts, 40 inventory items and 25 shipments with ETAs. Put it in src/data/.
+Then explain the model in five lines.
+
+
+Prompt 2 : The 3D scene 
+Using the existing data model and the attached concept image, build a 3D warehouse scene with React Three Fiber and drei.
+
+Render docks, trucks, forklifts and shelving as simple low-poly shapes, positioned from the data.
+
+Use a strategy-game camera: isometric angle, pan with mouse drag, zoom with the wheel, and limits so the user cannot leave the map.
+
+Add soft shadows and a clean grid floor.
+Do not change the data files.
+
+
+Prompt 3 : Click to inspect 
+Make every object clickable.
+On click, highlight the object with an outline and open a side panel showing its live status: name, state, current shipment, and the last update time.
+
+Simulate live updates every 2 seconds by changing truck and forklift states in a store. Use Zustand.
+
+The panel must update without reloading the scene.
+Keep the scene components free of business logic.
+
+Prompt 4 : KPIs, sites and filters 
+Add a top bar with a site selector. Switching the site moves the camera smoothly to that warehouse.
+
+Add a KPI panel: on-time delivery rate, docks in use, active trucks, and low-stock alerts, all computed from the data store.
+
+Add filters to show only delayed shipments, or only trucks of a chosen status.
+
+Use a dark industrial theme with amber accents.
+
+
+Prompt 5 : Review and polish 
+Review the whole project like a senior engineer. 
+    1. List bugs, performance problems and unused code.
+    2. Use instancing if there are many repeated meshes.
+    3. Make sure the app runs smoothly at 60 FPS.
+    4. Fix what you find, then run the build and the type check, and show me the results.
+Do not add new features
+
+Rules and what to do when something goes wrong 
+
+• Paste the exact error message
+• Say what you expected to happen
+• Change one thing at a time
+• Ask for the cause, then the fix
+• Commit after every working step
+
+
+
