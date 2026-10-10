@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { signOutNow } from '../app/session.ts';
+import { signOutNow, switchWorkspace } from '../app/session.ts';
 import { useWarehouse } from '../store/warehouseStore.ts';
 import type { Tone } from './format.ts';
+import { TeamDialog } from './TeamDialog.tsx';
 
 const LIVE_LABEL = {
   live: { label: 'Live', tone: 'ok' },
@@ -28,6 +29,7 @@ export function AccountMenu() {
   const user = useWarehouse((s) => s.user);
   const workspace = useWarehouse((s) => s.workspace);
   const [open, setOpen] = useState(false);
+  const [teamOpen, setTeamOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -85,6 +87,36 @@ export function AccountMenu() {
               <span className="tag">{ROLE_LABEL[workspace.role] ?? workspace.role}</span>
             </p>
           )}
+          {user.organizations.length > 1 && (
+            <div className="account__switch" role="group" aria-label="Switch organization">
+              {user.organizations
+                .filter((org) => org.slug !== workspace?.slug)
+                .map((org) => (
+                  <button
+                    key={org.slug}
+                    type="button"
+                    className="account__switch-option"
+                    onClick={() => {
+                      setOpen(false);
+                      void switchWorkspace(org.slug);
+                    }}
+                  >
+                    Switch to {org.name}
+                    <span className="tag">{ROLE_LABEL[org.role] ?? org.role}</span>
+                  </button>
+                ))}
+            </div>
+          )}
+          <button
+            type="button"
+            className="account__team"
+            onClick={() => {
+              setOpen(false);
+              setTeamOpen(true);
+            }}
+          >
+            Team
+          </button>
           <button
             type="button"
             className="account__signout"
@@ -98,6 +130,13 @@ export function AccountMenu() {
           </button>
         </div>
       )}
+      <TeamDialog
+        open={teamOpen}
+        onClose={() => {
+          setTeamOpen(false);
+          buttonRef.current?.focus();
+        }}
+      />
     </div>
   );
 }

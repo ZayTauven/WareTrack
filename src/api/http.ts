@@ -1,4 +1,4 @@
-import type { ApiMe, ApiSession } from './contract.ts';
+import type { ApiInvitationPreview, ApiMe, ApiSession } from './contract.ts';
 
 /**
  * HTTP client for /api/v1.
@@ -88,7 +88,7 @@ export async function signOut(): Promise<void> {
 }
 
 /** Authenticated request; refreshes once on 401, then gives up with ApiError(401). */
-async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+async function request<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<T> {
   const send = (token: string | null) => {
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -109,10 +109,37 @@ async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown):
     throw new ApiError(409, rejected.detail, rejected.code);
   }
   if (!response.ok) throw new ApiError(response.status, `Request failed (${response.status}).`);
-  return (await response.json()) as T;
+  return (response.status === 204 ? undefined : await response.json()) as T;
 }
 
 export const apiGet = <T>(path: string) => request<T>('GET', path);
 export const apiPost = <T>(path: string, body?: unknown) => request<T>('POST', path, body);
+export const apiPatch = <T>(path: string, body: unknown) => request<T>('PATCH', path, body);
+export const apiDelete = (path: string) => request<void>('DELETE', path);
+
+/** What an invitation link is for. Public: the invitee is not signed in yet. */
+export async function fetchInvitation(token: string): Promise<ApiInvitationPreview | null> {
+  const response = await fetch(`${API}/invitations/${encodeURIComponent(token)}/`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new ApiError(response.status, 'The invitation could not be loaded. Try again in a moment.');
+  return (await response.json()) as ApiInvitationPreview;
+}
+
+/** Accepts an invitation and signs in, like `signIn`. */
+export async function acceptInvitation(
+  token: string,
+  details: { password: string; firstName?: string; lastName?: string },
+): Promise<ApiSession> {
+  const response = await post(`/invitations/${encodeURIComponent(token)}/accept/`, details);
+  if (response.status === 409) {
+    const rejected = (await response.json()) as { code: string; detail: string };
+    throw new ApiError(409, rejected.detail, rejected.code);
+  }
+  if (response.status === 429) throw new ApiError(429, 'Too many attempts. Wait a minute, then try again.');
+  if (!response.ok) throw new ApiError(response.status, 'Joining failed. Try again in a moment.');
+  const session = (await response.json()) as ApiSession;
+  accessToken = session.access;
+  return session;
+}
 
 export const fetchMe = () => apiGet<ApiMe>('/me/');

@@ -1,7 +1,19 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Membership, Organization, User
+from .models import Invitation, Membership, Organization, User
+
+
+@admin.register(Invitation)
+class InvitationAdmin(admin.ModelAdmin):
+    list_display = ['email', 'organization', 'role', 'created_at', 'expires_at', 'accepted_at', 'revoked_at']
+    list_filter = ['organization', 'role']
+    search_fields = ['email']
+    # Links are created through the API, which is the only place the token exists in clear.
+    readonly_fields = ['organization', 'email', 'role', 'token_hash', 'invited_by', 'expires_at', 'accepted_at']
+
+    def has_add_permission(self, request) -> bool:
+        return False
 
 
 class MembershipInline(admin.TabularInline):

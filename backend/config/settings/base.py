@@ -96,7 +96,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.UserRateThrottle'],
-    'DEFAULT_THROTTLE_RATES': {'user': '600/min', 'login': '10/min', 'refresh': '30/min'},
+    'DEFAULT_THROTTLE_RATES': {'user': '600/min', 'login': '10/min', 'refresh': '30/min', 'invite': '20/min'},
     # Proxies in front of the app. Throttles identify clients by REMOTE_ADDR unless this says how
     # many trusted X-Forwarded-For hops to skip; left unset, DRF would trust a client-supplied header
     # and anyone could dodge the login throttle by sending a new X-Forwarded-For on every attempt.

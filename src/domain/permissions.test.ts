@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { can, requiredRole } from './permissions.ts';
+import { assignableRoles, can, canManageMember, requiredRole } from './permissions.ts';
 
 describe('permissions', () => {
   it('lets operators run the floor and only admins change docks', () => {
@@ -18,5 +18,19 @@ describe('permissions', () => {
 
   it('names the role an action needs', () => {
     expect(requiredRole('dock.state')).toBe('admin');
+  });
+
+  it('keeps the owner role for owners to grant', () => {
+    expect(assignableRoles('owner')).toEqual(['viewer', 'operator', 'admin', 'owner']);
+    expect(assignableRoles('admin')).toEqual(['viewer', 'operator', 'admin']);
+    expect(assignableRoles('operator')).toEqual([]);
+  });
+
+  it('lets admins manage everyone but owners and themselves', () => {
+    expect(canManageMember('admin', 'operator', false)).toBe(true);
+    expect(canManageMember('admin', 'owner', false)).toBe(false);
+    expect(canManageMember('owner', 'owner', false)).toBe(true);
+    expect(canManageMember('owner', 'viewer', true)).toBe(false);
+    expect(canManageMember('viewer', 'viewer', false)).toBe(false);
   });
 });

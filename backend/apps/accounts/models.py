@@ -1,4 +1,6 @@
+import hashlib
 import uuid
+from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
@@ -77,3 +79,47 @@ class Membership(models.Model):
 
     def __str__(self) -> str:
         return f'{self.user} · {self.organization} ({self.role})'
+
+
+class Invitation(models.Model):
+    """
+    A single-use link inviting an email address into an organization with a role.
+
+    Only a SHA-256 digest of the token is stored: the link is shown once, at creation, and a
+    database leak does not hand out working invitations.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='invitations')
+    email = models.EmailField()
+    role = models.CharField(max_length=16, choices=Membership.Role.choices)
+    token_hash = models.CharField(max_length=64, unique=True)
+    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'email'],
+                condition=models.Q(accepted_at__isnull=True, revoked_at__isnull=True),
+                name='one_open_invitation_per_email',
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.email} → {self.organization} ({self.role})'
+
+    @staticmethod
+    def digest(token: str) -> str:
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    def status(self, now: datetime) -> str:
+        if self.accepted_at:
+            return 'accepted'
+        if self.revoked_at:
+            return 'revoked'
+        return 'expired' if self.expires_at <= now else 'pending'

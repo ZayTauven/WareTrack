@@ -1,5 +1,5 @@
 import type { ApiMe, ApiSnapshot, LivePatch } from '../api/contract.ts';
-import { ApiError, apiGet, fetchMe, refreshSession, signIn, signOut } from '../api/http.ts';
+import { acceptInvitation, ApiError, apiGet, fetchMe, refreshSession, signIn, signOut } from '../api/http.ts';
 import { startLiveFeed } from '../api/live.ts';
 import { useWarehouse } from '../store/warehouseStore.ts';
 
@@ -44,6 +44,28 @@ export async function signInWithPassword(email: string, password: string): Promi
   await enter(session.user);
 }
 
+/** Accepts an invitation (which signs in), then opens the organization it was for. */
+export async function joinWithInvitation(
+  token: string,
+  organizationName: string,
+  details: { password: string; firstName?: string; lastName?: string },
+): Promise<void> {
+  booted = true; // the invitation replaces the session restore
+  const session = await acceptInvitation(token, details);
+  const joined = session.user.organizations.find((o) => o.name === organizationName);
+  await enter(session.user, joined?.slug);
+}
+
+/** Opens another organization the user belongs to. */
+export async function switchWorkspace(slug: string): Promise<void> {
+  const { user, workspace } = store.getState();
+  if (!user || workspace?.slug === slug) return;
+  stopFeed?.();
+  stopFeed = null;
+  store.getState().reset('signed-out');
+  await enter(user, slug);
+}
+
 export async function signOutNow(): Promise<void> {
   stopFeed?.();
   stopFeed = null;
@@ -60,8 +82,8 @@ export function retryLoading(): void {
   void resync(workspace.slug);
 }
 
-async function enter(user: ApiMe): Promise<void> {
-  const workspace = user.organizations[0];
+async function enter(user: ApiMe, slug?: string): Promise<void> {
+  const workspace = user.organizations.find((o) => o.slug === slug) ?? user.organizations[0];
   if (!workspace) {
     store.setState({ user, status: 'failed', notice: 'Your account is not part of an organization yet. Ask an admin to invite you.' });
     return;
