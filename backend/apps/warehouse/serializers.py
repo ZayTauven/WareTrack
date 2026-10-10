@@ -38,7 +38,18 @@ class RackSize(serializers.Serializer):
     height = serializers.FloatField()
 
 
-class SiteSerializer(serializers.ModelSerializer):
+class ReadModelSerializer(serializers.ModelSerializer):
+    """Output-only serializer. Every field is read-only, so the schema marks it as always present
+    (a field with a model default would otherwise come out optional, e.g. status)."""
+
+    def get_fields(self) -> dict[str, serializers.Field]:
+        fields = super().get_fields()
+        for field in fields.values():
+            field.read_only = True
+        return fields
+
+
+class SiteSerializer(ReadModelSerializer):
     origin = Origin(source='*')
     building = BuildingSize(source='*')
     bounds = FloorRect(source='*')
@@ -48,7 +59,7 @@ class SiteSerializer(serializers.ModelSerializer):
         fields = ['id', 'code', 'name', 'city', 'timezone', 'origin', 'building', 'bounds']
 
 
-class PlacedSerializer(serializers.ModelSerializer):
+class PlacedSerializer(ReadModelSerializer):
     siteId = serializers.UUIDField(source='site_id')
     position = FloorPoint(source='*')
     rotationY = serializers.FloatField(source='rotation_y')
@@ -95,7 +106,7 @@ class ForkliftSerializer(PlacedSerializer):
         return forklift.operator or None
 
 
-class InventoryItemSerializer(serializers.ModelSerializer):
+class InventoryItemSerializer(ReadModelSerializer):
     siteId = serializers.UUIDField(source='site_id')
     rackId = serializers.UUIDField(source='rack_id')
     reorderPoint = serializers.IntegerField(source='reorder_point')
@@ -114,7 +125,7 @@ class ShipmentLineSerializer(serializers.Serializer):
     quantity = serializers.IntegerField()
 
 
-class ShipmentSerializer(serializers.ModelSerializer):
+class ShipmentSerializer(ReadModelSerializer):
     siteId = serializers.UUIDField(source='site_id')
     truckId = serializers.UUIDField(source='truck_id', allow_null=True)
     dockId = serializers.UUIDField(source='dock_id', allow_null=True)

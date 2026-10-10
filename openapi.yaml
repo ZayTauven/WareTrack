@@ -8,11 +8,8 @@ paths:
   /api/v1/auth/login/:
     post:
       operationId: v1_auth_login_create
-      description: |-
-        Public endpoints that answer 401 (not 403) when credentials are wrong.
-
-        DRF downgrades 401 to 403 when a view has no authenticate header to send; these
-        views authenticate by body or cookie, so they declare the Bearer scheme themselves.
+      description: Signs in with email and password. Returns an access token and sets
+        the refresh cookie.
       tags:
       - v1
       requestBody:
@@ -31,11 +28,7 @@ paths:
   /api/v1/auth/logout/:
     post:
       operationId: v1_auth_logout_create
-      description: |-
-        Public endpoints that answer 401 (not 403) when credentials are wrong.
-
-        DRF downgrades 401 to 403 when a view has no authenticate header to send; these
-        views authenticate by body or cookie, so they declare the Bearer scheme themselves.
+      description: Revokes the refresh token and clears its cookie.
       tags:
       - v1
       responses:
@@ -44,11 +37,8 @@ paths:
   /api/v1/auth/refresh/:
     post:
       operationId: v1_auth_refresh_create
-      description: |-
-        Public endpoints that answer 401 (not 403) when credentials are wrong.
-
-        DRF downgrades 401 to 403 when a view has no authenticate header to send; these
-        views authenticate by body or cookie, so they declare the Bearer scheme themselves.
+      description: Exchanges the refresh cookie for a new access token, rotating the
+        cookie.
       tags:
       - v1
       responses:
@@ -63,6 +53,8 @@ paths:
   /api/v1/me/:
     get:
       operationId: v1_me_retrieve
+      description: The signed-in user and the organizations they belong to, with their
+        role.
       tags:
       - v1
       security:
@@ -674,6 +666,9 @@ components:
         * `outbound` - Outbound
     Dock:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -682,20 +677,28 @@ components:
         siteId:
           type: string
           format: uuid
+          readOnly: true
         number:
           type: integer
           maximum: 32767
           minimum: 0
+          readOnly: true
         name:
           type: string
+          readOnly: true
           maxLength: 40
         state:
-          $ref: '#/components/schemas/StateEnum'
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          readOnly: true
         position:
-          $ref: '#/components/schemas/FloorPoint'
+          allOf:
+          - $ref: '#/components/schemas/FloorPoint'
+          readOnly: true
         rotationY:
           type: number
           format: double
+          readOnly: true
       required:
       - id
       - name
@@ -703,6 +706,7 @@ components:
       - position
       - rotationY
       - siteId
+      - state
     FloorPoint:
       type: object
       properties:
@@ -737,6 +741,9 @@ components:
       - minZ
     Forklift:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -744,30 +751,40 @@ components:
           readOnly: true
         name:
           type: string
+          readOnly: true
           maxLength: 40
         siteId:
           type: string
           format: uuid
+          readOnly: true
         operator:
           type: string
           nullable: true
           readOnly: true
         status:
-          $ref: '#/components/schemas/ForkliftStatusEnum'
+          allOf:
+          - $ref: '#/components/schemas/ForkliftStatusEnum'
+          readOnly: true
         batteryPct:
           type: integer
+          readOnly: true
         shipmentId:
           type: string
           format: uuid
+          readOnly: true
           nullable: true
         position:
-          $ref: '#/components/schemas/FloorPoint'
+          allOf:
+          - $ref: '#/components/schemas/FloorPoint'
+          readOnly: true
         rotationY:
           type: number
           format: double
+          readOnly: true
         updatedAt:
           type: string
           format: date-time
+          readOnly: true
       required:
       - batteryPct
       - id
@@ -777,6 +794,7 @@ components:
       - rotationY
       - shipmentId
       - siteId
+      - status
       - updatedAt
     ForkliftStatusEnum:
       enum:
@@ -794,6 +812,9 @@ components:
         * `maintenance` - Maintenance
     InventoryItem:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -801,33 +822,45 @@ components:
           readOnly: true
         sku:
           type: string
+          readOnly: true
           maxLength: 32
         name:
           type: string
+          readOnly: true
           maxLength: 160
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          readOnly: true
         siteId:
           type: string
           format: uuid
+          readOnly: true
         rackId:
           type: string
           format: uuid
+          readOnly: true
         level:
           type: integer
           maximum: 32767
           minimum: 0
+          readOnly: true
         quantity:
           type: integer
           maximum: 2147483647
           minimum: 0
+          readOnly: true
         unit:
-          $ref: '#/components/schemas/UnitEnum'
+          allOf:
+          - $ref: '#/components/schemas/UnitEnum'
+          readOnly: true
         reorderPoint:
           type: integer
+          readOnly: true
         updatedAt:
           type: string
           format: date-time
+          readOnly: true
       required:
       - category
       - id
@@ -856,6 +889,9 @@ components:
       - password
     Me:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -864,15 +900,19 @@ components:
         email:
           type: string
           format: email
+          readOnly: true
           maxLength: 254
         firstName:
           type: string
+          readOnly: true
         lastName:
           type: string
+          readOnly: true
         organizations:
           type: array
           items:
             $ref: '#/components/schemas/Membership'
+          readOnly: true
       required:
       - email
       - firstName
@@ -881,15 +921,23 @@ components:
       - organizations
     Membership:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         slug:
           type: string
+          readOnly: true
         name:
           type: string
+          readOnly: true
         role:
-          $ref: '#/components/schemas/MembershipRoleEnum'
+          allOf:
+          - $ref: '#/components/schemas/MembershipRoleEnum'
+          readOnly: true
       required:
       - name
+      - role
       - slug
     MembershipRoleEnum:
       enum:
@@ -1078,6 +1126,9 @@ components:
             $ref: '#/components/schemas/Truck'
     Rack:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -1086,25 +1137,34 @@ components:
         siteId:
           type: string
           format: uuid
+          readOnly: true
         code:
           type: string
+          readOnly: true
           description: Location code, e.g. A-03.
           maxLength: 16
         zone:
           type: string
+          readOnly: true
           maxLength: 8
         levels:
           type: integer
           maximum: 32767
           minimum: 0
+          readOnly: true
           description: Storage levels; level 0 is the floor.
         size:
-          $ref: '#/components/schemas/RackSize'
+          allOf:
+          - $ref: '#/components/schemas/RackSize'
+          readOnly: true
         position:
-          $ref: '#/components/schemas/FloorPoint'
+          allOf:
+          - $ref: '#/components/schemas/FloorPoint'
+          readOnly: true
         rotationY:
           type: number
           format: double
+          readOnly: true
       required:
       - code
       - id
@@ -1142,6 +1202,9 @@ components:
       - user
     Shipment:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -1149,49 +1212,64 @@ components:
           readOnly: true
         reference:
           type: string
+          readOnly: true
           maxLength: 32
         siteId:
           type: string
           format: uuid
+          readOnly: true
         direction:
-          $ref: '#/components/schemas/DirectionEnum'
+          allOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          readOnly: true
         status:
-          $ref: '#/components/schemas/ShipmentStatusEnum'
+          allOf:
+          - $ref: '#/components/schemas/ShipmentStatusEnum'
+          readOnly: true
         counterparty:
           type: string
+          readOnly: true
           description: Supplier for inbound, customer for outbound.
           maxLength: 160
         truckId:
           type: string
           format: uuid
+          readOnly: true
           nullable: true
         dockId:
           type: string
           format: uuid
+          readOnly: true
           nullable: true
         promisedAt:
           type: string
           format: date-time
+          readOnly: true
         eta:
           type: string
           format: date-time
+          readOnly: true
           description: Estimated arrival; the actual arrival once the truck is on
             site.
         completedAt:
           type: string
           format: date-time
+          readOnly: true
           nullable: true
         progress:
           type: number
           format: double
+          readOnly: true
           description: Dock handling progress, 0 to 1.
         lines:
           type: array
           items:
             $ref: '#/components/schemas/ShipmentLine'
+          readOnly: true
         updatedAt:
           type: string
           format: date-time
+          readOnly: true
       required:
       - completedAt
       - counterparty
@@ -1200,9 +1278,11 @@ components:
       - eta
       - id
       - lines
+      - progress
       - promisedAt
       - reference
       - siteId
+      - status
       - truckId
       - updatedAt
     ShipmentLine:
@@ -1232,6 +1312,9 @@ components:
         * `completed` - Completed
     Site:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -1239,23 +1322,33 @@ components:
           readOnly: true
         code:
           type: string
+          readOnly: true
           description: Short code shown in the UI, e.g. OAK.
           maxLength: 8
         name:
           type: string
+          readOnly: true
           maxLength: 120
         city:
           type: string
+          readOnly: true
           maxLength: 120
         timezone:
           type: string
+          readOnly: true
           maxLength: 64
         origin:
-          $ref: '#/components/schemas/Origin'
+          allOf:
+          - $ref: '#/components/schemas/Origin'
+          readOnly: true
         building:
-          $ref: '#/components/schemas/BuildingSize'
+          allOf:
+          - $ref: '#/components/schemas/BuildingSize'
+          readOnly: true
         bounds:
-          $ref: '#/components/schemas/FloorRect'
+          allOf:
+          - $ref: '#/components/schemas/FloorRect'
+          readOnly: true
       required:
       - bounds
       - building
@@ -1348,6 +1441,9 @@ components:
         * `maintenance` - Maintenance
     Truck:
       type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
       properties:
         id:
           type: string
@@ -1355,28 +1451,38 @@ components:
           readOnly: true
         name:
           type: string
+          readOnly: true
           description: Fleet unit name, e.g. YTE-789.
           maxLength: 40
         carrier:
           type: string
+          readOnly: true
           maxLength: 120
         siteId:
           type: string
           format: uuid
+          readOnly: true
         status:
-          $ref: '#/components/schemas/TruckStatusEnum'
+          allOf:
+          - $ref: '#/components/schemas/TruckStatusEnum'
+          readOnly: true
         dockId:
           type: string
           format: uuid
+          readOnly: true
           nullable: true
         position:
-          $ref: '#/components/schemas/FloorPoint'
+          allOf:
+          - $ref: '#/components/schemas/FloorPoint'
+          readOnly: true
         rotationY:
           type: number
           format: double
+          readOnly: true
         updatedAt:
           type: string
           format: date-time
+          readOnly: true
       required:
       - carrier
       - dockId
@@ -1385,6 +1491,7 @@ components:
       - position
       - rotationY
       - siteId
+      - status
       - updatedAt
     TruckStatusEnum:
       enum:

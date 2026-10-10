@@ -4,6 +4,14 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // Same origin as the API in development, so the refresh cookie (SameSite=Strict, path
+    // /api/v1/auth/) and the WebSocket origin check work exactly as they will in production.
+    proxy: {
+      '/api': 'http://127.0.0.1:8001',
+      '/ws': { target: 'ws://127.0.0.1:8001', ws: true },
+    },
+  },
   build: {
     rolldownOptions: {
       output: {

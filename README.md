@@ -3,41 +3,62 @@
 Warehouse operations viewed like a real-time strategy game: an isometric 3D map of
 three distribution centres, live truck and forklift status, site KPIs and filters.
 
-Front end only for now. Live updates come from a simulation; the store is the single
-seam where a real feed (WebSocket, Django Channels) will plug in.
+A Django API serves the operation per organization; a server-side worker simulates it and
+pushes changes over WebSocket, so everyone in an organization sees the same live state.
+
+## Run it locally
+
+```bash
+docker compose up -d --wait                               # PostgreSQL :5433, Redis :6379
+cd backend && cp .env.example .env                        # set a secret key and a demo password
+uv sync && uv run python manage.py migrate && uv run python manage.py seed_demo
+uv run python manage.py runserver 8001                    # terminal 1: API + WebSockets
+uv run python manage.py run_simulation                    # terminal 2: live worker
+cd .. && npm install && npm run dev                       # terminal 3: http://localhost:5173
+```
+
+Sign in with `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` from `backend/.env`. Vite proxies
+`/api` and `/ws` to :8001, so the app, the refresh cookie and the socket share one origin.
 
 ## Scripts
 
-| Command             | What it does                              |
-| ------------------- | ----------------------------------------- |
-| `npm run dev`       | Dev server on http://localhost:5173       |
-| `npm run build`     | Type check, then production build         |
-| `npm run preview`   | Serve the production build                |
-| `npm run typecheck` | `tsc -b`                                  |
-| `npm test`          | Vitest: seed integrity, simulation, KPIs  |
-| `npm run lint`      | Oxlint                                    |
+| Command              | What it does                                              |
+| -------------------- | --------------------------------------------------------- |
+| `npm run dev`        | Dev server on http://localhost:5173, proxied to the API   |
+| `npm run build`      | Type check, then production build                         |
+| `npm run preview`    | Serve the production build                                |
+| `npm run typecheck`  | `tsc -b`, including the API contract check                |
+| `npm test`           | Vitest: seed, KPIs, patch merging, API client, live feed  |
+| `npm run lint`       | Oxlint                                                    |
+| `npm run api:schema` | Regenerate `openapi.yaml` from the backend                |
+| `npm run api:types`  | Regenerate `src/api/schema.d.ts` from `openapi.yaml`      |
 
 ## Architecture
 
 ```
-src/data/    Typed model, site layout, deterministic seed      (no React, no three)
-src/domain/  Pure rules: simulation, KPIs, filters, invariants (no React, no three)
-src/store/   Zustand: state, selection, filters, 2 s tick      (wires domain to views)
+src/api/     HTTP client (JWT in memory, refresh cookie), live feed, API contract
+src/app/     Session flow: sign-in, snapshot + live patches, resync, sign-out
+src/data/    Typed model, site layout, test seed                  (no React, no three)
+src/domain/  Pure rules: KPIs, filters, patch merging              (no React, no three)
+src/store/   Zustand: app status, session, operation, selection    (state only)
 src/scene/   React Three Fiber view: renders the store, reports clicks
-src/ui/      HUD: top bar, filter dock, inspector panel
+src/ui/      Sign-in and status screens, HUD: top bar, filter dock, inspector
 ```
 
+- `src/api/contract.ts` proves at compile time that the API's payloads fit the domain
+  types, so a backend change that breaks the front fails `tsc`, not production.
+- The live feed opens before the snapshot loads; patches received meanwhile are replayed
+  on top of it, and merging ignores rows older than what is held. Before the access token
+  expires, a successor socket takes over without a gap; after a drop, the feed reconnects
+  with backoff and resyncs.
 - Views read the store through narrow selectors; scene objects subscribe to their own
-  entity only, so a tick re-renders just what changed.
-- Business rules live in `domain/` and are unit-tested; `findViolations` checks the
-  operational invariants over long simulated runs.
+  entity only, so a patch re-renders just what changed.
 - Rendering budget: each truck, forklift and dock is baked into one geometry (one draw
   call); racks are instanced (four draw calls for all of them). About 45 draw calls
   for a site in view.
 - The 3D stack (three, R3F, drei, postprocessing) is split into a lazily loaded chunk;
   the HUD ships in ~80 kB gzipped.
-
-## Backend (`backend/`, in progress)
+## Backend (`backend/`)
 
 Django + PostgreSQL, multi-tenant: `Organization` → `Membership` (role) → `Site` → docks,
 racks, trucks, forklifts, inventory, shipments. Invariants a row can express (a truck sits

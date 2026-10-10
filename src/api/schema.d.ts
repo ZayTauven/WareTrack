@@ -13,12 +13,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Public endpoints that answer 401 (not 403) when credentials are wrong.
-         *
-         *     DRF downgrades 401 to 403 when a view has no authenticate header to send; these
-         *     views authenticate by body or cookie, so they declare the Bearer scheme themselves.
-         */
+        /** @description Signs in with email and password. Returns an access token and sets the refresh cookie. */
         post: operations["v1_auth_login_create"];
         delete?: never;
         options?: never;
@@ -35,12 +30,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Public endpoints that answer 401 (not 403) when credentials are wrong.
-         *
-         *     DRF downgrades 401 to 403 when a view has no authenticate header to send; these
-         *     views authenticate by body or cookie, so they declare the Bearer scheme themselves.
-         */
+        /** @description Revokes the refresh token and clears its cookie. */
         post: operations["v1_auth_logout_create"];
         delete?: never;
         options?: never;
@@ -57,12 +47,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Public endpoints that answer 401 (not 403) when credentials are wrong.
-         *
-         *     DRF downgrades 401 to 403 when a view has no authenticate header to send; these
-         *     views authenticate by body or cookie, so they declare the Bearer scheme themselves.
-         */
+        /** @description Exchanges the refresh cookie for a new access token, rotating the cookie. */
         post: operations["v1_auth_refresh_create"];
         delete?: never;
         options?: never;
@@ -77,6 +62,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description The signed-in user and the organizations they belong to, with their role. */
         get: operations["v1_me_retrieve"];
         put?: never;
         post?: never;
@@ -384,17 +370,21 @@ export interface components {
          * @enum {string}
          */
         DirectionEnum: "inbound" | "outbound";
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Dock: {
             /** Format: uuid */
             readonly id: string;
             /** Format: uuid */
-            siteId: string;
-            number: number;
-            name: string;
-            state?: components["schemas"]["StateEnum"];
-            position: components["schemas"]["FloorPoint"];
+            readonly siteId: string;
+            readonly number: number;
+            readonly name: string;
+            readonly state: components["schemas"]["StateEnum"];
+            readonly position: components["schemas"]["FloorPoint"];
             /** Format: double */
-            rotationY: number;
+            readonly rotationY: number;
         };
         FloorPoint: {
             /** Format: double */
@@ -412,22 +402,26 @@ export interface components {
             /** Format: double */
             maxZ: number;
         };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Forklift: {
             /** Format: uuid */
             readonly id: string;
-            name: string;
+            readonly name: string;
             /** Format: uuid */
-            siteId: string;
+            readonly siteId: string;
             readonly operator: string | null;
-            status?: components["schemas"]["ForkliftStatusEnum"];
-            batteryPct: number;
+            readonly status: components["schemas"]["ForkliftStatusEnum"];
+            readonly batteryPct: number;
             /** Format: uuid */
-            shipmentId: string | null;
-            position: components["schemas"]["FloorPoint"];
+            readonly shipmentId: string | null;
+            readonly position: components["schemas"]["FloorPoint"];
             /** Format: double */
-            rotationY: number;
+            readonly rotationY: number;
             /** Format: date-time */
-            updatedAt: string;
+            readonly updatedAt: string;
         };
         /**
          * @description * `idle` - Idle
@@ -438,41 +432,53 @@ export interface components {
          * @enum {string}
          */
         ForkliftStatusEnum: "idle" | "moving" | "lifting" | "charging" | "maintenance";
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         InventoryItem: {
             /** Format: uuid */
             readonly id: string;
-            sku: string;
-            name: string;
-            category: components["schemas"]["CategoryEnum"];
+            readonly sku: string;
+            readonly name: string;
+            readonly category: components["schemas"]["CategoryEnum"];
             /** Format: uuid */
-            siteId: string;
+            readonly siteId: string;
             /** Format: uuid */
-            rackId: string;
-            level: number;
-            quantity: number;
-            unit: components["schemas"]["UnitEnum"];
-            reorderPoint: number;
+            readonly rackId: string;
+            readonly level: number;
+            readonly quantity: number;
+            readonly unit: components["schemas"]["UnitEnum"];
+            readonly reorderPoint: number;
             /** Format: date-time */
-            updatedAt: string;
+            readonly updatedAt: string;
         };
         LoginRequest: {
             /** Format: email */
             email: string;
             password: string;
         };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Me: {
             /** Format: uuid */
             readonly id: string;
             /** Format: email */
-            email: string;
-            firstName: string;
-            lastName: string;
-            organizations: components["schemas"]["Membership"][];
+            readonly email: string;
+            readonly firstName: string;
+            readonly lastName: string;
+            readonly organizations: components["schemas"]["Membership"][];
         };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Membership: {
-            slug: string;
-            name: string;
-            role?: components["schemas"]["MembershipRoleEnum"];
+            readonly slug: string;
+            readonly name: string;
+            readonly role: components["schemas"]["MembershipRoleEnum"];
         };
         /**
          * @description * `owner` - Owner
@@ -593,20 +599,24 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Truck"][];
         };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Rack: {
             /** Format: uuid */
             readonly id: string;
             /** Format: uuid */
-            siteId: string;
+            readonly siteId: string;
             /** @description Location code, e.g. A-03. */
-            code: string;
-            zone: string;
+            readonly code: string;
+            readonly zone: string;
             /** @description Storage levels; level 0 is the floor. */
-            levels: number;
-            size: components["schemas"]["RackSize"];
-            position: components["schemas"]["FloorPoint"];
+            readonly levels: number;
+            readonly size: components["schemas"]["RackSize"];
+            readonly position: components["schemas"]["FloorPoint"];
             /** Format: double */
-            rotationY: number;
+            readonly rotationY: number;
         };
         RackSize: {
             /** Format: double */
@@ -620,37 +630,41 @@ export interface components {
             access: string;
             user: components["schemas"]["Me"];
         };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Shipment: {
             /** Format: uuid */
             readonly id: string;
-            reference: string;
+            readonly reference: string;
             /** Format: uuid */
-            siteId: string;
-            direction: components["schemas"]["DirectionEnum"];
-            status?: components["schemas"]["ShipmentStatusEnum"];
+            readonly siteId: string;
+            readonly direction: components["schemas"]["DirectionEnum"];
+            readonly status: components["schemas"]["ShipmentStatusEnum"];
             /** @description Supplier for inbound, customer for outbound. */
-            counterparty: string;
+            readonly counterparty: string;
             /** Format: uuid */
-            truckId: string | null;
+            readonly truckId: string | null;
             /** Format: uuid */
-            dockId: string | null;
+            readonly dockId: string | null;
             /** Format: date-time */
-            promisedAt: string;
+            readonly promisedAt: string;
             /**
              * Format: date-time
              * @description Estimated arrival; the actual arrival once the truck is on site.
              */
-            eta: string;
+            readonly eta: string;
             /** Format: date-time */
-            completedAt: string | null;
+            readonly completedAt: string | null;
             /**
              * Format: double
              * @description Dock handling progress, 0 to 1.
              */
-            progress?: number;
-            lines: components["schemas"]["ShipmentLine"][];
+            readonly progress: number;
+            readonly lines: components["schemas"]["ShipmentLine"][];
             /** Format: date-time */
-            updatedAt: string;
+            readonly updatedAt: string;
         };
         ShipmentLine: {
             /** Format: uuid */
@@ -666,17 +680,21 @@ export interface components {
          * @enum {string}
          */
         ShipmentStatusEnum: "scheduled" | "in_transit" | "at_yard" | "at_dock" | "completed";
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Site: {
             /** Format: uuid */
             readonly id: string;
             /** @description Short code shown in the UI, e.g. OAK. */
-            code: string;
-            name: string;
-            city: string;
-            timezone: string;
-            origin: components["schemas"]["Origin"];
-            building: components["schemas"]["BuildingSize"];
-            bounds: components["schemas"]["FloorRect"];
+            readonly code: string;
+            readonly name: string;
+            readonly city: string;
+            readonly timezone: string;
+            readonly origin: components["schemas"]["Origin"];
+            readonly building: components["schemas"]["BuildingSize"];
+            readonly bounds: components["schemas"]["FloorRect"];
         };
         SiteKpis: {
             /** Format: double */
@@ -706,22 +724,26 @@ export interface components {
          * @enum {string}
          */
         StateEnum: "operational" | "maintenance";
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
         Truck: {
             /** Format: uuid */
             readonly id: string;
             /** @description Fleet unit name, e.g. YTE-789. */
-            name: string;
-            carrier: string;
+            readonly name: string;
+            readonly carrier: string;
             /** Format: uuid */
-            siteId: string;
-            status?: components["schemas"]["TruckStatusEnum"];
+            readonly siteId: string;
+            readonly status: components["schemas"]["TruckStatusEnum"];
             /** Format: uuid */
-            dockId: string | null;
-            position: components["schemas"]["FloorPoint"];
+            readonly dockId: string | null;
+            readonly position: components["schemas"]["FloorPoint"];
             /** Format: double */
-            rotationY: number;
+            readonly rotationY: number;
             /** Format: date-time */
-            updatedAt: string;
+            readonly updatedAt: string;
         };
         /**
          * @description * `in_transit` - In Transit

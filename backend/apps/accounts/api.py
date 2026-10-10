@@ -20,10 +20,12 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.warehouse.serializers import ReadModelSerializer
+
 from .models import Membership, User
 
 
-class MembershipSerializer(serializers.ModelSerializer):
+class MembershipSerializer(ReadModelSerializer):
     slug = serializers.CharField(source='organization.slug')
     name = serializers.CharField(source='organization.name')
 
@@ -32,7 +34,7 @@ class MembershipSerializer(serializers.ModelSerializer):
         fields = ['slug', 'name', 'role']
 
 
-class MeSerializer(serializers.ModelSerializer):
+class MeSerializer(ReadModelSerializer):
     organizations = MembershipSerializer(source='memberships', many=True)
     firstName = serializers.CharField(source='first_name')  # the API speaks camelCase
     lastName = serializers.CharField(source='last_name')
@@ -91,6 +93,8 @@ def _me(user: User) -> dict:
 
 
 class LoginView(TokenEndpoint):
+    """Signs in with email and password. Returns an access token and sets the refresh cookie."""
+
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'login'
 
@@ -110,6 +114,8 @@ class LoginView(TokenEndpoint):
 
 
 class RefreshView(TokenEndpoint):
+    """Exchanges the refresh cookie for a new access token, rotating the cookie."""
+
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'refresh'
 
@@ -138,6 +144,8 @@ class RefreshView(TokenEndpoint):
 
 
 class LogoutView(TokenEndpoint):
+    """Revokes the refresh token and clears its cookie."""
+
     @extend_schema(request=None, responses={204: None}, auth=[])
     def post(self, request: Request) -> Response:
         refresh = request.COOKIES.get(settings.REFRESH_COOKIE['key'])
@@ -148,6 +156,8 @@ class LogoutView(TokenEndpoint):
 
 
 class MeView(APIView):
+    """The signed-in user and the organizations they belong to, with their role."""
+
     @extend_schema(responses=MeSerializer)
     def get(self, request: Request) -> Response:
         return Response(_me(request.user))
