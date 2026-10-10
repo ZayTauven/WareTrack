@@ -86,8 +86,24 @@ function MemberRow({
       )}
       {manageable &&
         (confirming ? (
-          <span className="member__confirm">
-            <button type="button" className="team-button" data-variant="danger" disabled={busy} onClick={() => void remove()}>
+          <span
+            className="member__confirm"
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') return;
+              event.stopPropagation(); // cancel the confirmation, not the whole dialog
+              event.preventDefault();
+              setConfirming(false);
+            }}
+          >
+            <button
+              type="button"
+              className="team-button"
+              data-variant="danger"
+              disabled={busy}
+              autoFocus
+              aria-label={`Confirm removing ${name || member.email}`}
+              onClick={() => void remove()}
+            >
               Remove
             </button>
             <button type="button" className="team-link" onClick={() => setConfirming(false)}>
