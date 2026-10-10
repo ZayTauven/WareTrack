@@ -110,6 +110,19 @@ broadcasts one message per organization:
 
 Entities are full rows in the snapshot shape, read back after the write: merge them by `id`.
 
+## Security
+
+| Area | Control |
+| --- | --- |
+| Sessions | Access JWT (5 min) in memory only; refresh token in an httpOnly, `SameSite=Strict` cookie scoped to `/api/v1/auth/`, rotated and blacklisted after use. Production signs JWTs with their own `JWT_SIGNING_KEY`. |
+| Passwords | Argon2; Django's validators (min. 10 characters, common and numeric passwords rejected). |
+| Tenancy | Every data URL is resolved through the caller's memberships: other organizations answer 404, records included. |
+| Abuse | Login 10/min and refresh 30/min per client, 600/min per user elsewhere; pages capped at 500 rows. Clients are identified by `REMOTE_ADDR` unless `NUM_PROXIES` says how many proxies to trust, so a forged `X-Forwarded-For` cannot reset the login throttle. |
+| WebSocket | Token in the subprotocol (never the URL), origin checked against `ALLOWED_HOSTS`, membership checked at the handshake, socket closed when the token expires. |
+| Front end | Production builds ship a Content-Security-Policy (same-origin scripts and connections, no inline scripts or `<style>`). Serve `frame-ancestors 'none'` as a header. |
+| Production settings | HTTPS redirect, HSTS, secure cookies, `X-Frame-Options: DENY`; `check --deploy` runs in CI. |
+| Supply chain | CI audits npm and Python dependencies; Dependabot keeps them and the pinned GitHub Actions current. |
+
 ## Conventions
 
 Distances in metres, Y up, floor positions `{ x, z }` local to each site, `rotationY = 0`

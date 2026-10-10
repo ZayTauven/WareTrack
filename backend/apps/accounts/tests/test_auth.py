@@ -79,3 +79,25 @@ def test_login_is_throttled(client: APIClient, monkeypatch: pytest.MonkeyPatch) 
     finally:
         cache.clear()
     assert statuses[-1] == 429
+
+
+@pytest.mark.django_db
+def test_login_throttle_cannot_be_dodged_with_forwarded_headers(
+    client: APIClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Without NUM_PROXIES, DRF keys the throttle on the client-supplied X-Forwarded-For.
+    monkeypatch.setattr(ScopedRateThrottle, 'THROTTLE_RATES', {'login': '3/min'})
+    cache.clear()
+    try:
+        statuses = [
+            client.post(
+                '/api/v1/auth/login/',
+                {'email': 'nobody@acme.test', 'password': 'x'},
+                format='json',
+                HTTP_X_FORWARDED_FOR=f'203.0.113.{attempt}',
+            ).status_code
+            for attempt in range(4)
+        ]
+    finally:
+        cache.clear()
+    assert statuses[-1] == 429
