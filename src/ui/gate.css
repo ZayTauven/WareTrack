@@ -1,0 +1,200 @@
+/* Sign-in and status screens: the same dark floor the map sits on, drawn as a faint isometric grid. */
+
+.gate {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 24px 16px;
+  background:
+    radial-gradient(60rem 40rem at 50% 45%, color-mix(in srgb, var(--amber) 7%, transparent), transparent 70%),
+    repeating-linear-gradient(30deg, rgb(255 255 255 / 0.028) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(-30deg, rgb(255 255 255 / 0.028) 0 1px, transparent 1px 34px),
+    var(--bg);
+}
+
+.gate__card {
+  width: min(380px, 100%);
+  padding: 32px;
+}
+
+.gate__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.gate__mark {
+  width: 34px;
+  height: 34px;
+}
+
+.gate__name {
+  font: 600 24px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.gate__title {
+  margin: 6px 0 20px;
+  font: 600 44px/0.95 var(--font-display);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.gate__notice {
+  margin: -6px 0 18px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  background: var(--panel-raised);
+  border-left: 2px solid var(--amber);
+  border-radius: 2px;
+}
+
+.gate__form {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field__label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.field__input {
+  height: 44px;
+  padding: 0 12px;
+  color: var(--text);
+  font: 400 15px/1 var(--font-body);
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.field__input:hover {
+  border-color: color-mix(in srgb, var(--muted) 50%, var(--line));
+}
+
+.field__input:focus-visible {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 22%, transparent);
+}
+
+.gate__error {
+  margin: 0;
+  color: var(--alert);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.gate__submit {
+  height: 46px;
+  padding: 0 20px;
+  color: #17130c;
+  font: 600 18px/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--amber);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: filter 120ms ease-out;
+}
+
+.gate__submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.gate__submit:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.gate__form .gate__submit {
+  margin-top: 6px;
+}
+
+/* Status screen */
+
+.gate__status {
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  max-width: 420px;
+  text-align: center;
+}
+
+.gate__mark--large {
+  width: 64px;
+  height: 64px;
+}
+
+.gate__mark--busy .brand-blade {
+  animation: blade 1.5s ease-in-out infinite;
+}
+
+.gate__mark--busy .brand-blade:nth-child(2) {
+  animation-delay: 0.25s;
+}
+
+.gate__mark--busy .brand-blade:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+@keyframes blade {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.gate__progress {
+  margin: 0;
+  color: var(--muted);
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gate__failure {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.gate__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gate__link {
+  padding: 0;
+  color: var(--muted);
+  font-size: 14px;
+  background: none;
+  border: 0;
+  border-bottom: 1px dashed var(--muted);
+  cursor: pointer;
+}
+
+.gate__link:hover {
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate__mark--busy .brand-blade {
+    animation: none;
+  }
+
+  .gate__submit {
+    transition: none;
+  }
+}

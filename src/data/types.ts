@@ -11,15 +11,19 @@
  * - Relations are foreign keys held by the child (dock.siteId, shipment.truckId...).
  *   Every site-scoped entity carries siteId, the tenant scope for filtering.
  * - Derived facts (dock occupancy, delays, low stock, KPIs) are computed, never stored.
+ * - The API (openapi.yaml) is the source of truth for this shape; src/api/contract.ts
+ *   proves at compile time that its payloads are assignable to these types.
  */
 
-export type SiteId = `site-${string}`;
-export type DockId = `dock-${string}`;
-export type RackId = `rack-${string}`;
-export type TruckId = `truck-${string}`;
-export type ForkliftId = `forklift-${string}`;
-export type InventoryItemId = `item-${string}`;
-export type ShipmentId = `shipment-${string}`;
+// Identifiers are opaque strings (UUIDs from the API, readable keys in the test seed).
+// The aliases document which entity an id points to.
+export type SiteId = string;
+export type DockId = string;
+export type RackId = string;
+export type TruckId = string;
+export type ForkliftId = string;
+export type InventoryItemId = string;
+export type ShipmentId = string;
 
 export type ISODateString = string;
 
