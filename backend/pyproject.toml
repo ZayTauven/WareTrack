@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "WareTrack API: multi-tenant warehouse operations, REST + real-time."
 requires-python = ">=3.13"
 dependencies = [
+    "channels>=4.3.2",
+    "channels-redis>=4.3.0",
+    "daphne>=4.2.3",
     "django>=6.1.2",
     "django-environ>=0.14.0",
     "djangorestframework>=3.18.3",

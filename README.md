@@ -51,7 +51,8 @@ cp .env.example .env                       # then set a secret key and demo pass
 uv sync
 uv run python manage.py migrate
 uv run python manage.py seed_demo          # demo organization + owner account
-uv run python manage.py runserver 8001     # API on :8001, docs at /api/docs/
+uv run python manage.py runserver 8001     # API + WebSockets (ASGI via Daphne) on :8001, docs at /api/docs/
+uv run python manage.py run_simulation     # live worker: one tick every 2 s, written and broadcast
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
 ```
@@ -69,6 +70,24 @@ uv run ruff check . && uv run ruff format --check .
 Non-members get 404 for an organization, never 403. `openapi.yaml` is the contract:
 `npm run api:schema` regenerates it from the backend, `npm run api:types` turns it into
 `src/api/schema.d.ts`.
+
+### Live updates (WebSocket)
+
+`ws://<host>/ws/v1/orgs/{org}/live/`, offering the subprotocols `waretrack.v1` and
+`bearer.<access token>`: the token rides in the handshake header, never in the URL. Non-members,
+bad or expired tokens are refused at the handshake; the socket closes with code `4401` when the
+token expires, and the client reconnects with a fresh one.
+
+`run_simulation` (port of `src/domain/simulation.ts`) reloads each organization, runs one
+tick in memory, writes it in a few bulk statements ordered to satisfy the constraints, then
+broadcasts one message per organization:
+
+```json
+{ "type": "patch", "at": "...", "trucks": [...], "forklifts": [...], "shipments": [...],
+  "inventory": [...], "removedShipmentIds": [...] }
+```
+
+Entities are full rows in the snapshot shape, read back after the write: merge them by `id`.
 
 ## Conventions
 

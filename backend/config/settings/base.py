@@ -15,6 +15,7 @@ DEBUG = False
 ALLOWED_HOSTS: list[str] = env.list('DJANGO_ALLOWED_HOSTS', default=[])
 
 INSTALLED_APPS = [
+    'daphne',  # first: makes runserver an ASGI server, so WebSockets work in development
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -122,4 +123,13 @@ SPECTACULAR_SETTINGS = {
         'ShipmentStatusEnum': 'apps.warehouse.models.Shipment.Status',
         'MembershipRoleEnum': 'apps.accounts.models.Membership.Role',
     },
+}
+
+# --- Real time ----------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {'hosts': [env('REDIS_URL', default='redis://localhost:6379/0')]},
+    }
 }
