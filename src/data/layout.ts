@@ -6,15 +6,15 @@ import type { FloorPoint, Placement } from './types.ts';
  */
 
 export const DOCK_COUNT = 6;
-export const DOCK_SPACING = 9;
+const DOCK_SPACING = 9;
 /** Distance from the dock door to the centre of a docked truck. */
-export const DOCKED_TRUCK_OFFSET = 6;
+const DOCKED_TRUCK_OFFSET = 6;
 
-export const YARD_WAITING_Z = -38;
-export const YARD_PARKING_Z = -48;
+const YARD_WAITING_Z = -38;
+const YARD_PARKING_Z = -48;
 export const ROAD_Z = -58;
 /** Lane behind the dock doors where forklifts stage pallets. */
-export const STAGING_Z = -14;
+const STAGING_Z = -14;
 /** Aisle in front of the first rack row, where forklifts pick. */
 export const PICKING_Z = -8;
 export const PICKING_X_RANGE = 26;

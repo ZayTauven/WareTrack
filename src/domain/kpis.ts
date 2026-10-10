@@ -2,7 +2,7 @@ import type { Shipment, SiteId, Truck, TruckStatus, WarehouseData } from '../dat
 import { activeShipmentOfTruck, arrivalDelayMinutes, isActive, isLowStock } from './selectors.ts';
 
 /** Late against its promise: arrived late, or expected to. */
-export const isDelayed = (shipment: Shipment) => isActive(shipment) && arrivalDelayMinutes(shipment) > 0;
+const isDelayed = (shipment: Shipment) => isActive(shipment) && arrivalDelayMinutes(shipment) > 0;
 
 export interface SiteKpis {
   /** Share of completed shipments that arrived by their promised time; null before any completion. */

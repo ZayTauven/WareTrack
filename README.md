@@ -1,32 +1,43 @@
-# React + TypeScript + Vite
+# WareTrack
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Warehouse operations viewed like a real-time strategy game: an isometric 3D map of
+three distribution centres, live truck and forklift status, site KPIs and filters.
 
-Currently, two official plugins are available:
+Front end only for now. Live updates come from a simulation; the store is the single
+seam where a real feed (WebSocket, Django Channels) will plug in.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Scripts
 
-## React Compiler
+| Command             | What it does                              |
+| ------------------- | ----------------------------------------- |
+| `npm run dev`       | Dev server on http://localhost:5173       |
+| `npm run build`     | Type check, then production build         |
+| `npm run preview`   | Serve the production build                |
+| `npm run typecheck` | `tsc -b`                                  |
+| `npm test`          | Vitest: seed integrity, simulation, KPIs  |
+| `npm run lint`      | Oxlint                                    |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Architecture
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+src/data/    Typed model, site layout, deterministic seed      (no React, no three)
+src/domain/  Pure rules: simulation, KPIs, filters, invariants (no React, no three)
+src/store/   Zustand: state, selection, filters, 2 s tick      (wires domain to views)
+src/scene/   React Three Fiber view: renders the store, reports clicks
+src/ui/      HUD: top bar, filter dock, inspector panel
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- Views read the store through narrow selectors; scene objects subscribe to their own
+  entity only, so a tick re-renders just what changed.
+- Business rules live in `domain/` and are unit-tested; `findViolations` checks the
+  operational invariants over long simulated runs.
+- Rendering budget: each truck, forklift and dock is baked into one geometry (one draw
+  call); racks are instanced (four draw calls for all of them). About 45 draw calls
+  for a site in view.
+- The 3D stack (three, R3F, drei, postprocessing) is split into a lazily loaded chunk;
+  the HUD ships in ~80 kB gzipped.
+
+## Conventions
+
+Distances in metres, Y up, floor positions `{ x, z }` local to each site, `rotationY = 0`
+faces the yard (-Z). Timestamps are ISO 8601 strings.

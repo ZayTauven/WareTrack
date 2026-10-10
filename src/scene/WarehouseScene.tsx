@@ -45,7 +45,10 @@ function worldBounds(sites: WarehouseData['sites']): FloorRect {
 function TruckNode({ id }: { id: TruckId }) {
   const truck = useWarehouse((s) => byId(s.data.trucks, id));
   // Filtered-out trucks are not rendered at all, so they cannot be clicked either.
-  const shown = useWarehouse((s) => (truck ? truckMatches(s.data, truck, s.filters) : false));
+  const shown = useWarehouse((s) => {
+    const current = byId(s.data.trucks, id);
+    return current ? truckMatches(s.data, current, s.filters) : false;
+  });
   if (!truck || !shown) return null;
   return (
     <Selectable target={{ kind: 'truck', id }}>

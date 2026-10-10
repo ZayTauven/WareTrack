@@ -22,6 +22,18 @@ describe('simulateTick', () => {
     }
   });
 
+  it('keeps state bounded with unique ids over a long run', () => {
+    const random = seededRandom('bounded');
+    let data = createSeed(NOW);
+    for (let tick = 1; tick <= 3_000; tick++) data = simulateTick(data, new Date(NOW.getTime() + tick * TICK_MS), random);
+    const ids = data.shipments.map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const site of data.sites) {
+      expect(data.shipments.filter((s) => s.siteId === site.id && s.status === 'completed').length).toBeLessThanOrEqual(30);
+    }
+    expect(data.shipments.length).toBeLessThan(150);
+  });
+
   it('moves the operation forward', () => {
     const random = seededRandom('progress');
     const seed = createSeed(NOW);

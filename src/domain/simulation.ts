@@ -45,6 +45,8 @@ const RATES = {
   drain: 0.3,
   battery: { critical: 15, recharge: 25, full: 95 },
   minScheduledPerSite: 2,
+  /** Completed shipments kept per site; older ones are dropped so state stays bounded. */
+  historyPerSite: 30,
   /** New work is promised close to now (some already overdue) so delays stay meaningful. */
   newShipmentLeadMinutes: [-10, 20],
 } as const;
@@ -253,10 +255,12 @@ export function simulateTick(data: WarehouseData, now: Date, random: Random): Wa
     if (scheduled >= RATES.minScheduledPerSite) continue;
     const template = pick(data.shipments.filter((s) => s.siteId === site.id), random);
     if (template) {
-      const created = newShipment(site, template, shipments.size + 1, now, random);
+      const created = newShipment(site, template, nextSequence(shipments), now, random);
       shipments.set(created.id, created);
     }
   }
+
+  trimHistory(shipments, data.sites);
 
   return {
     ...data,
@@ -265,6 +269,26 @@ export function simulateTick(data: WarehouseData, now: Date, random: Random): Wa
     forklifts: rebuild(data.forklifts, forklifts),
     inventory: rebuild(data.inventory, inventory),
   };
+}
+
+/** Next free number for simulated shipments; history trimming makes the map size unusable for this. */
+function nextSequence(shipments: Map<string, Shipment>): number {
+  let max = shipments.size;
+  for (const id of shipments.keys()) {
+    const match = /^shipment-sim-(\d+)$/.exec(id);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return max + 1;
+}
+
+/** Drops the oldest completed shipments beyond the per-site history budget. */
+function trimHistory(shipments: Map<string, Shipment>, sites: Site[]) {
+  for (const site of sites) {
+    const completed = [...shipments.values()]
+      .filter((s) => s.siteId === site.id && s.status === 'completed')
+      .sort((a, b) => Date.parse(b.completedAt ?? '') - Date.parse(a.completedAt ?? ''));
+    for (const old of completed.slice(RATES.historyPerSite)) shipments.delete(old.id);
+  }
 }
 
 function pick<T>(rows: T[], random: Random): T | undefined {

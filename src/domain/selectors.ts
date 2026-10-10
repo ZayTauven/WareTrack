@@ -13,7 +13,7 @@ import type {
 } from '../data/index.ts';
 
 /** A shipment is active from departure until its dock work is completed. */
-export const ACTIVE_SHIPMENT_STATUSES: readonly ShipmentStatus[] = ['in_transit', 'at_yard', 'at_dock'];
+const ACTIVE_SHIPMENT_STATUSES: readonly ShipmentStatus[] = ['in_transit', 'at_yard', 'at_dock'];
 
 export const isActive = (shipment: Shipment) => ACTIVE_SHIPMENT_STATUSES.includes(shipment.status);
 
