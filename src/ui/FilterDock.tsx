@@ -29,45 +29,51 @@ export function FilterDock() {
 
   return (
     <div className="dock hud-panel" role="group" aria-label="Truck filters">
-      <label className="toggle" data-tone="alert">
-        <input type="checkbox" checked={filters.delayedOnly} onChange={(e) => setFilters({ delayedOnly: e.target.checked })} />
-        <span className="chip-face">
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="6" />
-            <path d="M8 4.8V8l2.2 1.6" />
-          </svg>
-          Delayed only
-          <span className="count">{counts.delayed}</span>
-        </span>
-      </label>
+      {/* First, outside the scrolling area and always present: in reach, and the chips never shift. */}
+      <button type="button" className="dock__clear" disabled={!filtered} onClick={() => setFilters(NO_FILTERS)}>
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4 4l8 8M12 4l-8 8" />
+        </svg>
+        Clear filters
+      </button>
 
       <span className="dock__divider" aria-hidden="true" />
 
-      <fieldset className="segmented">
-        <legend className="sr-only">Truck status</legend>
-        {(['all', ...STATUS_ORDER] as const).map((status) => (
-          <label key={status} className="segment" data-tone={status === 'all' ? undefined : TRUCK_STATUS[status].tone}>
-            <input
-              type="radio"
-              name="truck-status"
-              value={status}
-              checked={filters.status === status}
-              onChange={() => setFilters({ status })}
-            />
-            <span className="chip-face">
-              {status !== 'all' && <span className="segment__dot" aria-hidden="true" />}
-              {status === 'all' ? 'All trucks' : TRUCK_STATUS[status].label}
-              <span className="count">{counts[status]}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
+      <div className="dock__scroll">
+        <label className="toggle" data-tone="alert">
+          <input type="checkbox" checked={filters.delayedOnly} onChange={(e) => setFilters({ delayedOnly: e.target.checked })} />
+          <span className="chip-face">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" />
+              <path d="M8 4.8V8l2.2 1.6" />
+            </svg>
+            Delayed only
+            <span className="count">{counts.delayed}</span>
+          </span>
+        </label>
 
-      {filtered && (
-        <button type="button" className="dock__clear" onClick={() => setFilters(NO_FILTERS)}>
-          Clear filters
-        </button>
-      )}
+        <span className="dock__divider" aria-hidden="true" />
+
+        <fieldset className="segmented">
+          <legend className="sr-only">Truck status</legend>
+          {(['all', ...STATUS_ORDER] as const).map((status) => (
+            <label key={status} className="segment" data-tone={status === 'all' ? undefined : TRUCK_STATUS[status].tone}>
+              <input
+                type="radio"
+                name="truck-status"
+                value={status}
+                checked={filters.status === status}
+                onChange={() => setFilters({ status })}
+              />
+              <span className="chip-face">
+                {status !== 'all' && <span className="segment__dot" aria-hidden="true" />}
+                {status === 'all' ? 'All trucks' : TRUCK_STATUS[status].label}
+                <span className="count">{counts[status]}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      </div>
     </div>
   );
 }

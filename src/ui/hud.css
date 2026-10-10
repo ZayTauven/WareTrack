@@ -213,6 +213,13 @@
   gap: 6px;
   max-width: calc(100vw - 2 * var(--hud-gap));
   padding: 6px;
+}
+
+.dock__scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -309,18 +316,37 @@ input:checked + .chip-face {
 }
 
 .dock__clear {
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  gap: 6px;
   height: 34px;
   padding: 0 10px;
   color: var(--amber);
-  font-size: 12px;
+  font: 500 13px/1 var(--font-body);
   background: none;
-  border: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.dock__clear:hover {
-  text-decoration: underline;
+.dock__clear svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.dock__clear:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+}
+
+.dock__clear:disabled {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: default;
 }
 
 .app > .hint {
