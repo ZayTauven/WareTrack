@@ -66,9 +66,11 @@ class PlacedSerializer(ReadModelSerializer):
 
 
 class DockSerializer(PlacedSerializer):
+    updatedAt = serializers.DateTimeField(source='updated_at')
+
     class Meta:
         model = Dock
-        fields = ['id', 'siteId', 'number', 'name', 'state', 'position', 'rotationY']
+        fields = ['id', 'siteId', 'number', 'name', 'state', 'position', 'rotationY', 'updatedAt']
 
 
 class RackSerializer(PlacedSerializer):
@@ -167,3 +169,39 @@ class SiteKpisSerializer(serializers.Serializer):
 
     def to_representation(self, instance: SiteKpis) -> dict:
         return dict(instance)
+
+
+class PatchSerializer(serializers.Serializer):
+    """A change to the operation: sent over the live feed, and returned by every action.
+    Rows are full, in the snapshot shape; merge them by id."""
+
+    type = serializers.ChoiceField(choices=['patch'])
+    at = serializers.DateTimeField()
+    docks = DockSerializer(many=True)
+    trucks = TruckSerializer(many=True)
+    forklifts = ForkliftSerializer(many=True)
+    shipments = ShipmentSerializer(many=True)
+    inventory = InventoryItemSerializer(many=True)
+    removedShipmentIds = serializers.ListField(child=serializers.UUIDField())
+
+
+class ActionRejectedSerializer(serializers.Serializer):
+    """A business rule refused the action (HTTP 409)."""
+
+    code = serializers.CharField(help_text='Stable machine-readable reason, e.g. dock_occupied.')
+    detail = serializers.CharField(help_text='Explanation for people.')
+
+
+# --- Action inputs --------------------------------------------------------------
+
+
+class DockTruckSerializer(serializers.Serializer):
+    dockId = serializers.UUIDField()
+
+
+class AssignForkliftSerializer(serializers.Serializer):
+    shipmentId = serializers.UUIDField(allow_null=True, help_text='null releases the forklift.')
+
+
+class DockStateSerializer(serializers.Serializer):
+    state = serializers.ChoiceField(choices=Dock.State.choices)

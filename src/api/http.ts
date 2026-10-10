@@ -15,11 +15,14 @@ const EXPIRY_MARGIN_MS = 30_000;
 
 export class ApiError extends Error {
   readonly status: number;
+  /** Machine-readable reason when a business rule refused an action (HTTP 409), e.g. `dock_occupied`. */
+  readonly code: string | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code: string | null = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -84,16 +87,32 @@ export async function signOut(): Promise<void> {
   await post('/auth/logout/').catch(() => undefined); // the cookie is gone either way on the next refresh
 }
 
-/** GET with the access token; refreshes once on 401, then gives up with ApiError(401). */
-export async function apiGet<T>(path: string): Promise<T> {
-  const send = (token: string | null) =>
-    fetch(`${API}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+/** Authenticated request; refreshes once on 401, then gives up with ApiError(401). */
+async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+  const send = (token: string | null) => {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    return fetch(`${API}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  };
 
   let response = await send(await freshToken());
   if (response.status === 401) response = await send(await refreshSession());
   if (response.status === 401) throw new ApiError(401, 'Your session has ended. Sign in again.');
+  if (response.status === 403) throw new ApiError(403, 'Your role does not allow this.');
+  if (response.status === 409) {
+    const rejected = (await response.json()) as { code: string; detail: string };
+    throw new ApiError(409, rejected.detail, rejected.code);
+  }
   if (!response.ok) throw new ApiError(response.status, `Request failed (${response.status}).`);
   return (await response.json()) as T;
 }
+
+export const apiGet = <T>(path: string) => request<T>('GET', path);
+export const apiPost = <T>(path: string, body?: unknown) => request<T>('POST', path, body);
 
 export const fetchMe = () => apiGet<ApiMe>('/me/');

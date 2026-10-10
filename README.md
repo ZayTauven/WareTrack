@@ -110,6 +110,25 @@ broadcasts one message per organization:
 
 Entities are full rows in the snapshot shape, read back after the write: merge them by `id`.
 
+## Roles and actions
+
+| Action (inspector) | Endpoint | Minimum role |
+| --- | --- | --- |
+| Send a truck waiting in the yard to a free dock | `POST orgs/{org}/trucks/{id}/dock/` | operator |
+| Put a forklift on a docked shipment, or release it | `POST orgs/{org}/forklifts/{id}/assign/` | operator |
+| Send a forklift to the charger | `POST orgs/{org}/forklifts/{id}/charge/` | operator |
+| Take a dock out of service, or put it back | `POST orgs/{org}/docks/{id}/state/` | admin |
+
+Viewers follow the operation without changing it. The server enforces the matrix
+(`backend/apps/accounts/roles.py`); the front end mirrors it to show only what a user can do.
+A refused rule answers 409 with a stable `code` (`dock_occupied`, `no_operator`...) and a message.
+Actions and simulation ticks share a per-organization lock, so a tick never overwrites an action.
+Each action returns the patch it broadcasts, so the screen updates at once for everyone.
+
+`seed_demo` creates `operator@…` and `viewer@…` accounts next to the owner (same password).
+Add people with `uv run python manage.py add_member EMAIL --role operator` (password from
+`$MEMBER_PASSWORD` or a prompt).
+
 ## Security
 
 | Area | Control |

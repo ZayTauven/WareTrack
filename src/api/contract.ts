@@ -1,4 +1,5 @@
 import type {
+  Dock,
   Forklift,
   InventoryItem,
   Shipment,
@@ -15,13 +16,17 @@ export type ApiSession = Schemas['Session'];
 export type ApiMe = Schemas['Me'];
 export type ApiSiteKpis = Schemas['SiteKpis'];
 
+/** 409 body: a business rule refused an action. */
+export type ApiActionRejected = Schemas['ActionRejected'];
+
 /**
- * One live update from /ws/v1/orgs/{org}/live/. WebSocket messages are outside OpenAPI, so this
- * mirrors backend/apps/warehouse/realtime.py:patch_payload by hand; rows reuse the REST shapes.
+ * One change to the operation: pushed on /ws/v1/orgs/{org}/live/ and returned by every action.
+ * Written against the domain types; the contract below proves the API's `Patch` fits it.
  */
 export interface LivePatch {
   type: 'patch';
   at: string;
+  docks: Dock[];
   trucks: Truck[];
   forklifts: Forklift[];
   shipments: Shipment[];
@@ -38,8 +43,9 @@ type Assignable<From, To> = [From] extends [To] ? true : never;
 
 export const apiMatchesDomain: [
   Assignable<ApiSnapshot, WarehouseData>,
+  Assignable<Schemas['Patch'], LivePatch>,
   Assignable<Schemas['Truck'], Truck>,
   Assignable<Schemas['Forklift'], Forklift>,
   Assignable<Schemas['Shipment'], Shipment>,
   Assignable<Schemas['InventoryItem'], InventoryItem>,
-] = [true, true, true, true, true];
+] = [true, true, true, true, true, true];

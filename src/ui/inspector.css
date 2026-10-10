@@ -381,3 +381,117 @@
     animation: none;
   }
 }
+
+/* Actions ----------------------------------------------------------------- */
+
+.actions__hint {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.action-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+
+.action-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 9px 10px;
+  color: var(--text);
+  text-align: left;
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.action-option:hover:not(:disabled) {
+  border-color: var(--amber);
+}
+
+.action-option__label {
+  font: 600 15px/1 var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.action-option__meta {
+  color: var(--muted);
+  font: 400 11px/1.2 var(--font-mono);
+}
+
+.action-option[data-current] {
+  border-color: color-mix(in srgb, var(--amber) 60%, var(--line));
+}
+
+.action-option[data-current] .action-option__meta {
+  color: var(--amber);
+}
+
+.action-option:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.action-option[data-current]:disabled {
+  opacity: 1;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-button {
+  height: 36px;
+  padding: 0 14px;
+  color: var(--text);
+  font: 500 13px/1 var(--font-body);
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.action-button:hover:not(:disabled) {
+  border-color: var(--amber);
+}
+
+.action-button[data-variant='caution']:hover:not(:disabled) {
+  color: var(--alert);
+  border-color: var(--alert);
+}
+
+.action-button[data-variant='primary'] {
+  color: #17130c;
+  font: 600 15px/1 var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.action-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.actions__note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.actions__feedback {
+  margin: 12px 0 0;
+  color: var(--tone);
+  font-size: 13px;
+  line-height: 1.45;
+}

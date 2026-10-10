@@ -106,6 +106,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org}/docks/{id}/state/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take a dock out of service, or put it back (admin)
+         * @description Lists and details of one entity type within the organization, filterable by site (and status).
+         */
+        post: operations["v1_orgs_docks_state_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org}/forklifts/": {
         parameters: {
             query?: never;
@@ -134,6 +154,46 @@ export interface paths {
         get: operations["v1_orgs_forklifts_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org}/forklifts/{id}/assign/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put a forklift on a docked shipment, or release it with null (operator)
+         * @description Lists and details of one entity type within the organization, filterable by site (and status).
+         */
+        post: operations["v1_orgs_forklifts_assign_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org}/forklifts/{id}/charge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a forklift to the charger (operator)
+         * @description Lists and details of one entity type within the organization, filterable by site (and status).
+         */
+        post: operations["v1_orgs_forklifts_charge_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -341,12 +401,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org}/trucks/{id}/dock/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a truck waiting in the yard to a dock (operator)
+         * @description Lists and details of one entity type within the organization, filterable by site (and status).
+         */
+        post: operations["v1_orgs_trucks_dock_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         Access: {
             access: string;
+        };
+        /** @description A business rule refused the action (HTTP 409). */
+        ActionRejected: {
+            /** @description Stable machine-readable reason, e.g. dock_occupied. */
+            code: string;
+            /** @description Explanation for people. */
+            detail: string;
+        };
+        AssignForkliftRequest: {
+            /**
+             * Format: uuid
+             * @description null releases the forklift.
+             */
+            shipmentId: string | null;
         };
         BuildingSize: {
             /** Format: double */
@@ -385,6 +479,15 @@ export interface components {
             readonly position: components["schemas"]["FloorPoint"];
             /** Format: double */
             readonly rotationY: number;
+            /** Format: date-time */
+            readonly updatedAt: string;
+        };
+        DockStateRequest: {
+            state: components["schemas"]["StateEnum"];
+        };
+        DockTruckRequest: {
+            /** Format: uuid */
+            dockId: string;
         };
         FloorPoint: {
             /** Format: double */
@@ -600,6 +703,21 @@ export interface components {
             results: components["schemas"]["Truck"][];
         };
         /**
+         * @description A change to the operation: sent over the live feed, and returned by every action.
+         *     Rows are full, in the snapshot shape; merge them by id.
+         */
+        Patch: {
+            type: components["schemas"]["TypeEnum"];
+            /** Format: date-time */
+            at: string;
+            docks: components["schemas"]["Dock"][];
+            trucks: components["schemas"]["Truck"][];
+            forklifts: components["schemas"]["Forklift"][];
+            shipments: components["schemas"]["Shipment"][];
+            inventory: components["schemas"]["InventoryItem"][];
+            removedShipmentIds: string[];
+        };
+        /**
          * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
          *     (a field with a model default would otherwise come out optional, e.g. status).
          */
@@ -755,6 +873,11 @@ export interface components {
          */
         TruckStatusEnum: "in_transit" | "waiting" | "loading" | "unloading" | "idle";
         /**
+         * @description * `patch` - patch
+         * @enum {string}
+         */
+        TypeEnum: "patch";
+        /**
          * @description * `pallet` - Pallet
          *     * `case` - Case
          * @enum {string}
@@ -908,6 +1031,56 @@ export interface operations {
             };
         };
     };
+    v1_orgs_docks_state_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this dock. */
+                id: string;
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DockStateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Patch"];
+                };
+            };
+            /** @description No response body */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
+                };
+            };
+        };
+    };
     v1_orgs_forklifts_list: {
         parameters: {
             query?: {
@@ -959,6 +1132,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Forklift"];
+                };
+            };
+        };
+    };
+    v1_orgs_forklifts_assign_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this forklift. */
+                id: string;
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignForkliftRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Patch"];
+                };
+            };
+            /** @description No response body */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
+                };
+            };
+        };
+    };
+    v1_orgs_forklifts_charge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this forklift. */
+                id: string;
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Patch"];
+                };
+            };
+            /** @description No response body */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
                 };
             };
         };
@@ -1272,6 +1541,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Truck"];
+                };
+            };
+        };
+    };
+    v1_orgs_trucks_dock_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this truck. */
+                id: string;
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DockTruckRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Patch"];
+                };
+            };
+            /** @description No response body */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
                 };
             };
         };

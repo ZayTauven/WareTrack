@@ -23,6 +23,7 @@ import {
   formatPercent,
   type Tone,
 } from './format.ts';
+import { DockActions, ForkliftActions, TruckActions } from './Actions.tsx';
 import { Meter } from './Meter.tsx';
 import { useNow } from './useNow.ts';
 import './inspector.css';
@@ -193,6 +194,7 @@ function TruckPanel({ data, id }: { data: WarehouseData; id: TruckId }) {
         <Section title="Current shipment">
           {shipment ? <ShipmentDetails data={data} shipment={shipment} /> : <Empty>No active shipment. Parked until the next dispatch.</Empty>}
         </Section>
+        <TruckActions data={data} truck={truck} />
       </div>
       <LiveStamp updatedAt={truck.updatedAt} />
     </>
@@ -224,6 +226,7 @@ function ForkliftPanel({ data, id }: { data: WarehouseData; id: ForkliftId }) {
             <Empty>{forklift.status === 'maintenance' ? 'Out of service until maintenance is signed off.' : 'Not assigned to a shipment.'}</Empty>
           )}
         </Section>
+        <ForkliftActions data={data} forklift={forklift} />
       </div>
       <LiveStamp updatedAt={forklift.updatedAt} />
     </>
@@ -283,8 +286,9 @@ function DockPanel({ data, id }: { data: WarehouseData; id: DockId }) {
             </ul>
           </Section>
         )}
+        <DockActions data={data} dock={dock} />
       </div>
-      <LiveStamp updatedAt={truck?.updatedAt ?? null} />
+      <LiveStamp updatedAt={truck?.updatedAt ?? dock.updatedAt} />
     </>
   );
 }

@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.utils import timezone
 
 from apps.accounts.models import Organization
+from apps.warehouse.actions import operation_lock
 from apps.warehouse.realtime import broadcast, patch_payload
 from apps.warehouse.simulation import Operation, persist, simulate_tick
 
@@ -36,10 +37,13 @@ class Command(BaseCommand):
                 tick += 1
                 for organization in organizations:
                     # Reload every tick: the worker holds no state, so edits made elsewhere are picked up.
-                    operation = Operation.load(organization)
-                    now = timezone.now()
-                    journal = simulate_tick(operation, now, rng)
-                    persist(operation, journal)
+                    # The lock is the one operator actions take: a tick never overwrites an action
+                    # with state read before it.
+                    with operation_lock(organization):
+                        operation = Operation.load(organization)
+                        now = timezone.now()
+                        journal = simulate_tick(operation, now, rng)
+                        persist(operation, journal)
                     broadcast(organization, patch_payload(journal, now))
                     if options['verbosity'] > 1:
                         self.stdout.write(f'tick {tick} · {organization.slug}: {len(journal.saves)} changes')

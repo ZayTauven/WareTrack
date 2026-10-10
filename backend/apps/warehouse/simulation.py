@@ -97,7 +97,7 @@ def _same(a: tuple[float, float], b: tuple[float, float]) -> bool:
     return abs(a[0] - b[0]) < 1e-6 and abs(a[1] - b[1]) < 1e-6
 
 
-def _heading(start: tuple[float, float], end: tuple[float, float], fallback: float) -> float:
+def heading(start: tuple[float, float], end: tuple[float, float], fallback: float) -> float:
     if _same(start, end):
         return fallback
     return math.atan2(-(end[0] - start[0]), -(end[1] - start[1]))
@@ -235,7 +235,7 @@ def simulate_tick(op: Operation, now: datetime, rng: random.Random) -> Journal:
     forklift_fields = ('status', 'shipment', 'battery_pct', 'position_x', 'position_z', 'rotation_y', 'updated_at')
 
     def move_to(forklift: Forklift, target: tuple[float, float]) -> None:
-        forklift.rotation_y = _heading((forklift.position_x, forklift.position_z), target, forklift.rotation_y)
+        forklift.rotation_y = heading((forklift.position_x, forklift.position_z), target, forklift.rotation_y)
         forklift.position_x, forklift.position_z = target
 
     def record(forklift: Forklift) -> None:
