@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api:schema": "cd backend && uv run python manage.py spectacular --validate --fail-on-warn --file ../openapi.yaml",
+    "api:types": "npx --yes -p openapi-typescript@7.13.0 -p typescript@5.9 openapi-typescript openapi.yaml -o src/api/schema.d.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

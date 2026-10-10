@@ -3,8 +3,7 @@ from collections import Counter
 from apps.accounts.models import Organization
 from apps.warehouse.models import Dock, Forklift, InventoryItem, Rack, Shipment, ShipmentLine, Site, Truck
 from apps.warehouse.seed import seed_demo
-
-from .conftest import NOW
+from testing import NOW
 
 
 def test_creates_the_requested_volumes(seeded: Organization) -> None:

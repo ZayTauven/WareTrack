@@ -51,9 +51,24 @@ cp .env.example .env                       # then set a secret key and demo pass
 uv sync
 uv run python manage.py migrate
 uv run python manage.py seed_demo          # demo organization + owner account
+uv run python manage.py runserver 8001     # API on :8001, docs at /api/docs/
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
 ```
+
+### API (`/api/v1`)
+
+| Endpoint | |
+| --- | --- |
+| `POST auth/login/` · `auth/refresh/` · `auth/logout/` | JWT. Access token (5 min) in the body; refresh token in an httpOnly, SameSite=Strict cookie scoped to `/api/v1/auth/`, rotated and blacklisted after use |
+| `GET me/` | Current user and their organizations (role per organization) |
+| `GET orgs/{org}/snapshot/` | The whole operation in the front end's `WarehouseData` shape |
+| `GET orgs/{org}/{sites,docks,racks,trucks,forklifts,inventory,shipments}/` | Paginated lists and details, `?site=` and (where relevant) `?status=` filters |
+| `GET orgs/{org}/sites/{id}/kpis/` | Site KPIs computed in SQL, same definitions as `src/domain/kpis.ts` |
+
+Non-members get 404 for an organization, never 403. `openapi.yaml` is the contract:
+`npm run api:schema` regenerates it from the backend, `npm run api:types` turns it into
+`src/api/schema.d.ts`.
 
 ## Conventions
 

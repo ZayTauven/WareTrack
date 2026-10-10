@@ -5,8 +5,7 @@ from django.db import IntegrityError, transaction
 
 from apps.accounts.models import Organization
 from apps.warehouse.models import Dock, Shipment, Truck
-
-from .conftest import NOW
+from testing import NOW
 
 
 def _violates(action) -> bool:
