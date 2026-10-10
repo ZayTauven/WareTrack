@@ -137,6 +137,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/Dock'
           description: ''
+  /api/v1/orgs/{org}/docks/{id}/state/:
+    post:
+      operationId: v1_orgs_docks_state_create
+      description: Lists and details of one entity type within the organization, filterable
+        by site (and status).
+      summary: Take a dock out of service, or put it back (admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this dock.
+        required: true
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DockStateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patch'
+          description: ''
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
+          description: ''
   /api/v1/orgs/{org}/forklifts/:
     get:
       operationId: v1_orgs_forklifts_list
@@ -212,6 +259,94 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Forklift'
+          description: ''
+  /api/v1/orgs/{org}/forklifts/{id}/assign/:
+    post:
+      operationId: v1_orgs_forklifts_assign_create
+      description: Lists and details of one entity type within the organization, filterable
+        by site (and status).
+      summary: Put a forklift on a docked shipment, or release it with null (operator)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this forklift.
+        required: true
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignForkliftRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patch'
+          description: ''
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
+          description: ''
+  /api/v1/orgs/{org}/forklifts/{id}/charge/:
+    post:
+      operationId: v1_orgs_forklifts_charge_create
+      description: Lists and details of one entity type within the organization, filterable
+        by site (and status).
+      summary: Send a forklift to the charger (operator)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this forklift.
+        required: true
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patch'
+          description: ''
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
           description: ''
   /api/v1/orgs/{org}/inventory/:
     get:
@@ -619,6 +754,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/Truck'
           description: ''
+  /api/v1/orgs/{org}/trucks/{id}/dock/:
+    post:
+      operationId: v1_orgs_trucks_dock_create
+      description: Lists and details of one entity type within the organization, filterable
+        by site (and status).
+      summary: Send a truck waiting in the yard to a dock (operator)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this truck.
+        required: true
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DockTruckRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patch'
+          description: ''
+        '403':
+          description: No response body
+        '404':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
+          description: ''
 components:
   schemas:
     Access:
@@ -628,6 +810,29 @@ components:
           type: string
       required:
       - access
+    ActionRejected:
+      type: object
+      description: A business rule refused the action (HTTP 409).
+      properties:
+        code:
+          type: string
+          description: Stable machine-readable reason, e.g. dock_occupied.
+        detail:
+          type: string
+          description: Explanation for people.
+      required:
+      - code
+      - detail
+    AssignForkliftRequest:
+      type: object
+      properties:
+        shipmentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: null releases the forklift.
+      required:
+      - shipmentId
     BuildingSize:
       type: object
       properties:
@@ -699,6 +904,10 @@ components:
           type: number
           format: double
           readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
       required:
       - id
       - name
@@ -707,6 +916,22 @@ components:
       - rotationY
       - siteId
       - state
+      - updatedAt
+    DockStateRequest:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/StateEnum'
+      required:
+      - state
+    DockTruckRequest:
+      type: object
+      properties:
+        dockId:
+          type: string
+          format: uuid
+      required:
+      - dockId
     FloorPoint:
       type: object
       properties:
@@ -1124,6 +1349,51 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Truck'
+    Patch:
+      type: object
+      description: |-
+        A change to the operation: sent over the live feed, and returned by every action.
+        Rows are full, in the snapshot shape; merge them by id.
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        at:
+          type: string
+          format: date-time
+        docks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dock'
+        trucks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Truck'
+        forklifts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Forklift'
+        shipments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shipment'
+        inventory:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryItem'
+        removedShipmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - at
+      - docks
+      - forklifts
+      - inventory
+      - removedShipmentIds
+      - shipments
+      - trucks
+      - type
     Rack:
       type: object
       description: |-
@@ -1507,6 +1777,11 @@ components:
         * `loading` - Loading
         * `unloading` - Unloading
         * `idle` - Idle
+    TypeEnum:
+      enum:
+      - patch
+      type: string
+      description: '* `patch` - patch'
     UnitEnum:
       enum:
       - pallet

@@ -72,6 +72,7 @@ export interface Dock extends Placement {
   name: string;
   /** Whether the door can be used. Occupancy is derived from trucks, not stored here. */
   state: DockState;
+  updatedAt: ISODateString;
 }
 
 /** A pallet rack. Inventory is stored on its levels. */

@@ -79,6 +79,7 @@ class Dock(UUIDModel, Placement):
     name = models.CharField(max_length=40)
     # Whether the door can be used. Occupancy is derived from trucks, never stored.
     state = models.CharField(max_length=16, choices=State.choices, default=State.OPERATIONAL)
+    updated_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['site', 'number']

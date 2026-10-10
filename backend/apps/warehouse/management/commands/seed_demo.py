@@ -25,9 +25,21 @@ class Command(BaseCommand):
             user=user, organization=organization, defaults={'role': Membership.Role.OWNER}
         )
 
+        # One account per lower role, on the owner's domain and with the same password, so each
+        # interface can be tried as that role.
+        domain = user.email.split('@')[1]
+        accounts = [user.email]
+        for role in (Membership.Role.OPERATOR, Membership.Role.VIEWER):
+            member, _ = User.objects.get_or_create(email=f'{role}@{domain}')
+            member.set_password(password)
+            member.save()
+            Membership.objects.update_or_create(user=member, organization=organization, defaults={'role': role})
+            accounts.append(member.email)
+
         counts = seed_demo(organization, timezone.now())
         summary = ', '.join(f'{count} {name}' for name, count in counts.items())
         self.stdout.write(self.style.SUCCESS(f'{organization.name}: {summary}.'))
         self.stdout.write(
-            f'Owner account {"created" if created else "reset"}: {user.email} (password from backend/.env).'
+            f'Owner account {"created" if created else "reset"}: {user.email}. Role accounts: '
+            f'{", ".join(accounts[1:])}. Password for all: DEMO_USER_PASSWORD in backend/.env.'
         )

@@ -41,10 +41,16 @@ function upsert<T extends Versioned>(rows: T[], incoming: readonly T[], removed:
 
 /** Applies one live patch to the operation. Pure; unchanged collections keep their identity. */
 export function applyPatch(data: WarehouseData, patch: LivePatch): WarehouseData {
+  const docks = upsert(data.docks, patch.docks);
   const trucks = upsert(data.trucks, patch.trucks);
   const forklifts = upsert(data.forklifts, patch.forklifts);
   const shipments = upsert(data.shipments, patch.shipments, new Set(patch.removedShipmentIds));
   const inventory = upsert(data.inventory, patch.inventory);
-  const same = trucks === data.trucks && forklifts === data.forklifts && shipments === data.shipments && inventory === data.inventory;
-  return same ? data : { ...data, trucks, forklifts, shipments, inventory };
+  const same =
+    docks === data.docks &&
+    trucks === data.trucks &&
+    forklifts === data.forklifts &&
+    shipments === data.shipments &&
+    inventory === data.inventory;
+  return same ? data : { ...data, docks, trucks, forklifts, shipments, inventory };
 }

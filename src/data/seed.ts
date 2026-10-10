@@ -248,6 +248,7 @@ export function createSeed(now: Date = new Date()): WarehouseData {
         state: def.maintenanceDocks.includes(number) ? 'maintenance' : 'operational',
         position: { x: dockX(number), z: DOCK_WALL_Z },
         rotationY: FACING.yard,
+        updatedAt: at(-720),
       } satisfies Dock;
     }),
   );

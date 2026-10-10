@@ -26,8 +26,14 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.accounts.models import Organization
 
-from .models import Forklift, InventoryItem, Shipment, Truck
-from .serializers import ForkliftSerializer, InventoryItemSerializer, ShipmentSerializer, TruckSerializer
+from .models import Dock, Forklift, InventoryItem, Shipment, Truck
+from .serializers import (
+    DockSerializer,
+    ForkliftSerializer,
+    InventoryItemSerializer,
+    ShipmentSerializer,
+    TruckSerializer,
+)
 from .simulation import Journal
 
 PROTOCOL = 'waretrack.v1'
@@ -44,6 +50,7 @@ def patch_payload(journal: Journal, at: datetime) -> dict[str, Any]:
     payload = {
         'type': 'patch',
         'at': at,
+        'docks': DockSerializer(Dock.objects.filter(id__in=journal.changed(Dock)), many=True).data,
         'trucks': TruckSerializer(Truck.objects.filter(id__in=journal.changed(Truck)), many=True).data,
         'forklifts': ForkliftSerializer(Forklift.objects.filter(id__in=journal.changed(Forklift)), many=True).data,
         'shipments': ShipmentSerializer(

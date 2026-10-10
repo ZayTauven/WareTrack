@@ -9,6 +9,7 @@ const later = (minutes: number) => new Date(NOW.getTime() + minutes * 60_000).to
 const patch = (overrides: Partial<LivePatch>): LivePatch => ({
   type: 'patch',
   at: later(1),
+  docks: [],
   trucks: [],
   forklifts: [],
   shipments: [],
