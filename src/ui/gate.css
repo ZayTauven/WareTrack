@@ -198,3 +198,30 @@
     transition: none;
   }
 }
+
+.gate__lede {
+  margin: -8px 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.gate__lede strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.gate__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+/* Grid items default to min-width: auto, which lets inputs push the card wider. */
+.field {
+  min-width: 0;
+}
+
+.field__input {
+  width: 100%;
+  min-width: 0;
+}

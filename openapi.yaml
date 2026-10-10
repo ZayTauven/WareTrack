@@ -50,6 +50,60 @@ paths:
           description: ''
         '401':
           description: No response body
+  /api/v1/invitations/{token}/:
+    get:
+      operationId: v1_invitations_retrieve
+      description: What the invitation is for, so the page can show it before asking
+        for a password.
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationPreview'
+          description: ''
+        '404':
+          description: No response body
+  /api/v1/invitations/{token}/accept/:
+    post:
+      operationId: v1_invitations_accept_create
+      description: 'Accepts the invitation and signs in: same answer and refresh cookie
+        as login.'
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
+          description: ''
   /api/v1/me/:
     get:
       operationId: v1_me_retrieve
@@ -418,6 +472,181 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InventoryItem'
+          description: ''
+  /api/v1/orgs/{org}/invitations/:
+    get:
+      operationId: v1_orgs_invitations_list
+      description: Invitations still waiting to be accepted.
+      parameters:
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
+          description: ''
+    post:
+      operationId: v1_orgs_invitations_create
+      description: Invites an email address with a role. The link is in the response,
+        and only there.
+      parameters:
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationCreated'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
+          description: ''
+  /api/v1/orgs/{org}/invitations/{invitation_id}/:
+    delete:
+      operationId: v1_orgs_invitations_destroy
+      description: 'Revokes an invitation: its link stops working.'
+      parameters:
+      - in: path
+        name: invitation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/orgs/{org}/members/:
+    get:
+      operationId: v1_orgs_members_list
+      description: Everyone in the organization, with their role. Visible to every
+        member.
+      parameters:
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+          description: ''
+  /api/v1/orgs/{org}/members/{user_id}/:
+    patch:
+      operationId: v1_orgs_members_partial_update
+      description: Changes a member's role (admin; owner role changes need an owner).
+      parameters:
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoleChangeRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
+          description: ''
+    delete:
+      operationId: v1_orgs_members_destroy
+      description: Removes someone from the organization (their account stays).
+      parameters:
+      - in: path
+        name: org
+        schema:
+          type: string
+        description: Organization slug.
+        required: true
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRejected'
           description: ''
   /api/v1/orgs/{org}/racks/:
     get:
@@ -803,6 +1032,23 @@ paths:
           description: ''
 components:
   schemas:
+    AcceptInvitationRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        firstName:
+          type: string
+          default: ''
+          maxLength: 150
+        lastName:
+          type: string
+          default: ''
+          maxLength: 150
+      required:
+      - password
     Access:
       type: object
       properties:
@@ -1098,6 +1344,143 @@ components:
       - sku
       - unit
       - updatedAt
+    Invitation:
+      type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          maxLength: 254
+        role:
+          allOf:
+          - $ref: '#/components/schemas/MembershipRoleEnum'
+          readOnly: true
+        invitedBy:
+          type: string
+          format: email
+          readOnly: true
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        expiresAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - createdAt
+      - email
+      - expiresAt
+      - id
+      - invitedBy
+      - role
+    InvitationCreated:
+      type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+          maxLength: 254
+        role:
+          allOf:
+          - $ref: '#/components/schemas/MembershipRoleEnum'
+          readOnly: true
+        invitedBy:
+          type: string
+          format: email
+          readOnly: true
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        expiresAt:
+          type: string
+          format: date-time
+          readOnly: true
+        path:
+          type: string
+          readOnly: true
+          description: Link path to share; shown only once.
+      required:
+      - createdAt
+      - email
+      - expiresAt
+      - id
+      - invitedBy
+      - path
+      - role
+    InvitationPreview:
+      type: object
+      properties:
+        organization:
+          type: string
+        slug:
+          type: string
+          description: Organization slug, to open it once joined.
+          pattern: ^[-a-zA-Z0-9_]+$
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/MembershipRoleEnum'
+        status:
+          $ref: '#/components/schemas/InvitationPreviewStatusEnum'
+        expiresAt:
+          type: string
+          format: date-time
+        accountExists:
+          type: boolean
+          description: 'True: confirm with the existing password.'
+      required:
+      - accountExists
+      - email
+      - expiresAt
+      - organization
+      - role
+      - slug
+      - status
+    InvitationPreviewStatusEnum:
+      enum:
+      - pending
+      - expired
+      - accepted
+      - revoked
+      type: string
+      description: |-
+        * `pending` - pending
+        * `expired` - expired
+        * `accepted` - accepted
+        * `revoked` - revoked
+    InviteRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/MembershipRoleEnum'
+      required:
+      - email
+      - role
     LoginRequest:
       type: object
       properties:
@@ -1144,6 +1527,41 @@ components:
       - id
       - lastName
       - organizations
+    Member:
+      type: object
+      description: |-
+        Output-only serializer. Every field is read-only, so the schema marks it as always present
+        (a field with a model default would otherwise come out optional, e.g. status).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        firstName:
+          type: string
+          readOnly: true
+        lastName:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/MembershipRoleEnum'
+          readOnly: true
+        joinedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - email
+      - firstName
+      - id
+      - joinedAt
+      - lastName
+      - role
     Membership:
       type: object
       description: |-
@@ -1394,6 +1812,11 @@ components:
       - shipments
       - trucks
       - type
+    PatchedRoleChangeRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/MembershipRoleEnum'
     Rack:
       type: object
       description: |-

@@ -12,20 +12,20 @@ from typing import ClassVar
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Model, Prefetch, QuerySet
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.models import Membership, Organization
-from apps.accounts.roles import Ability, can
+from apps.accounts.models import Organization
+from apps.accounts.roles import Ability
+from apps.accounts.scoping import ORG_PARAMETER, OrganizationScopedMixin, requires
 
 from . import actions
 from .actions import ActionRejected
@@ -50,39 +50,8 @@ from .serializers import (
 )
 from .simulation import Journal
 
-ORG_PARAMETER = OpenApiParameter('org', OpenApiTypes.STR, OpenApiParameter.PATH, description='Organization slug.')
 SITE_FILTER = OpenApiParameter('site', OpenApiTypes.UUID, description='Only records of this site.')
 STATUS_FILTER = OpenApiParameter('status', OpenApiTypes.STR, description='Only records in this status.')
-
-
-class OrganizationScopedMixin:
-    request: Request
-    kwargs: dict
-
-    def get_membership(self) -> Membership:
-        """The caller's membership in the organization of the URL; 404 if there is none."""
-        if not hasattr(self, '_membership'):
-            self._membership = get_object_or_404(
-                Membership.objects.select_related('organization'),
-                user=self.request.user,
-                organization__slug=self.kwargs['org'],
-            )
-        return self._membership
-
-    def get_organization(self) -> Organization:
-        return self.get_membership().organization
-
-
-def requires(ability: Ability) -> type[BasePermission]:
-    """Permission: the caller's role in the URL's organization grants `ability`."""
-
-    class RoleAllows(BasePermission):
-        message = f'Your role does not allow this ({ability.value}).'
-
-        def has_permission(self, request: Request, view: OrganizationScopedMixin) -> bool:
-            return can(view.get_membership().role, ability)
-
-    return RoleAllows
 
 
 def _act(organization: Organization, run: Callable[[], Journal]) -> Response:

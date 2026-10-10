@@ -1,8 +1,8 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { boot } from './app/session.ts';
 import { useWarehouse } from './store/warehouseStore.ts';
 import { FilterDock } from './ui/FilterDock.tsx';
-import { SignInScreen, StatusScreen } from './ui/Gate.tsx';
+import { AcceptInviteScreen, SignInScreen, StatusScreen } from './ui/Gate.tsx';
 import { Inspector } from './ui/Inspector.tsx';
 import { TopBar } from './ui/TopBar.tsx';
 
@@ -25,10 +25,28 @@ function Operations() {
   );
 }
 
+/** `/invite/<token>` opens the invitation screen; every other path is the app. */
+const inviteTokenIn = (path: string) => /^\/invite\/([^/]+)\/?$/.exec(path)?.[1] ?? null;
+
 export default function App() {
   const status = useWarehouse((s) => s.status);
-  useEffect(boot, []);
+  const [inviteToken, setInviteToken] = useState(() => inviteTokenIn(window.location.pathname));
 
+  useEffect(() => {
+    if (!inviteToken) boot();
+  }, [inviteToken]);
+
+  if (inviteToken && status !== 'loading' && status !== 'ready') {
+    return (
+      <AcceptInviteScreen
+        token={inviteToken}
+        onLeave={() => {
+          window.history.replaceState(null, '', '/');
+          setInviteToken(null);
+        }}
+      />
+    );
+  }
   if (status === 'signed-out') return <SignInScreen />;
   if (status === 'ready') return <Operations />;
   return <StatusScreen />;

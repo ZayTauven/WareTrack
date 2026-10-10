@@ -576,3 +576,36 @@ input:checked + .chip-face {
     animation: none !important;
   }
 }
+
+.account__switch {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.account__switch-option,
+.account__team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.account__switch-option:hover,
+.account__team:hover {
+  border-color: var(--amber);
+}
+
+.account__team {
+  margin-bottom: 8px;
+}

@@ -19,6 +19,11 @@ export type ApiSiteKpis = Schemas['SiteKpis'];
 /** 409 body: a business rule refused an action. */
 export type ApiActionRejected = Schemas['ActionRejected'];
 
+export type ApiMember = Schemas['Member'];
+export type ApiInvitation = Schemas['Invitation'];
+export type ApiInvitationCreated = Schemas['InvitationCreated'];
+export type ApiInvitationPreview = Schemas['InvitationPreview'];
+
 /**
  * One change to the operation: pushed on /ws/v1/orgs/{org}/live/ and returned by every action.
  * Written against the domain types; the contract below proves the API's `Patch` fits it.

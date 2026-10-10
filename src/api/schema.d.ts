@@ -55,6 +55,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/invitations/{token}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description What the invitation is for, so the page can show it before asking for a password. */
+        get: operations["v1_invitations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}/accept/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Accepts the invitation and signs in: same answer and refresh cookie as login. */
+        post: operations["v1_invitations_accept_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/": {
         parameters: {
             query?: never;
@@ -232,6 +266,76 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org}/invitations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Invitations still waiting to be accepted. */
+        get: operations["v1_orgs_invitations_list"];
+        put?: never;
+        /** @description Invites an email address with a role. The link is in the response, and only there. */
+        post: operations["v1_orgs_invitations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org}/invitations/{invitation_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Revokes an invitation: its link stops working. */
+        delete: operations["v1_orgs_invitations_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org}/members/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Everyone in the organization, with their role. Visible to every member. */
+        get: operations["v1_orgs_members_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org}/members/{user_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Removes someone from the organization (their account stays). */
+        delete: operations["v1_orgs_members_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Changes a member's role (admin; owner role changes need an owner). */
+        patch: operations["v1_orgs_members_partial_update"];
         trace?: never;
     };
     "/api/v1/orgs/{org}/racks/": {
@@ -425,6 +529,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptInvitationRequest: {
+            password: string;
+            /** @default  */
+            firstName: string;
+            /** @default  */
+            lastName: string;
+        };
         Access: {
             access: string;
         };
@@ -556,6 +667,68 @@ export interface components {
             /** Format: date-time */
             readonly updatedAt: string;
         };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
+        Invitation: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: email */
+            readonly email: string;
+            readonly role: components["schemas"]["MembershipRoleEnum"];
+            /** Format: email */
+            readonly invitedBy: string | null;
+            /** Format: date-time */
+            readonly createdAt: string;
+            /** Format: date-time */
+            readonly expiresAt: string;
+        };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
+        InvitationCreated: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: email */
+            readonly email: string;
+            readonly role: components["schemas"]["MembershipRoleEnum"];
+            /** Format: email */
+            readonly invitedBy: string | null;
+            /** Format: date-time */
+            readonly createdAt: string;
+            /** Format: date-time */
+            readonly expiresAt: string;
+            /** @description Link path to share; shown only once. */
+            readonly path: string;
+        };
+        InvitationPreview: {
+            organization: string;
+            /** @description Organization slug, to open it once joined. */
+            slug: string;
+            /** Format: email */
+            email: string;
+            role: components["schemas"]["MembershipRoleEnum"];
+            status: components["schemas"]["InvitationPreviewStatusEnum"];
+            /** Format: date-time */
+            expiresAt: string;
+            /** @description True: confirm with the existing password. */
+            accountExists: boolean;
+        };
+        /**
+         * @description * `pending` - pending
+         *     * `expired` - expired
+         *     * `accepted` - accepted
+         *     * `revoked` - revoked
+         * @enum {string}
+         */
+        InvitationPreviewStatusEnum: "pending" | "expired" | "accepted" | "revoked";
+        InviteRequest: {
+            /** Format: email */
+            email: string;
+            role: components["schemas"]["MembershipRoleEnum"];
+        };
         LoginRequest: {
             /** Format: email */
             email: string;
@@ -573,6 +746,21 @@ export interface components {
             readonly firstName: string;
             readonly lastName: string;
             readonly organizations: components["schemas"]["Membership"][];
+        };
+        /**
+         * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
+         *     (a field with a model default would otherwise come out optional, e.g. status).
+         */
+        Member: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: email */
+            readonly email: string;
+            readonly firstName: string;
+            readonly lastName: string;
+            readonly role: components["schemas"]["MembershipRoleEnum"];
+            /** Format: date-time */
+            readonly joinedAt: string;
         };
         /**
          * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
@@ -716,6 +904,9 @@ export interface components {
             shipments: components["schemas"]["Shipment"][];
             inventory: components["schemas"]["InventoryItem"][];
             removedShipmentIds: string[];
+        };
+        PatchedRoleChangeRequest: {
+            role?: components["schemas"]["MembershipRoleEnum"];
         };
         /**
          * @description Output-only serializer. Every field is read-only, so the schema marks it as always present
@@ -956,6 +1147,67 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    v1_invitations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationPreview"];
+                };
+            };
+            /** @description No response body */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_invitations_accept_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptInvitationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
+                };
             };
         };
     };
@@ -1281,6 +1533,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InventoryItem"];
+                };
+            };
+        };
+    };
+    v1_orgs_invitations_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invitation"][];
+                };
+            };
+        };
+    };
+    v1_orgs_invitations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationCreated"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
+                };
+            };
+        };
+    };
+    v1_orgs_invitations_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invitation_id: string;
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_orgs_members_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization slug. */
+                org: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"][];
+                };
+            };
+        };
+    };
+    v1_orgs_members_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization slug. */
+                org: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
+                };
+            };
+        };
+    };
+    v1_orgs_members_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization slug. */
+                org: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedRoleChangeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionRejected"];
                 };
             };
         };

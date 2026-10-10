@@ -125,6 +125,19 @@ A refused rule answers 409 with a stable `code` (`dock_occupied`, `no_operator`.
 Actions and simulation ticks share a per-organization lock, so a tick never overwrites an action.
 Each action returns the patch it broadcasts, so the screen updates at once for everyone.
 
+### Team and invitations
+
+Account menu → **Team**: every member sees who is in the organization; admins and owners
+change roles, remove members and invite people. Rules (server-side, `apps/accounts/team.py`):
+only an owner grants, changes or removes the owner role; an organization keeps at least one
+owner; nobody changes their own role or removes themselves.
+
+An invitation is a single-use link (`/invite/<token>`), valid 7 days, revocable, shown once at
+creation; only a SHA-256 digest of the token is stored. Opening it shows the organization and
+role, then creates the account (validated password) or, for an existing account, asks for its
+current password; either way the person lands in the app signed in. There is no email sending
+yet: the admin copies the link. Members of several organizations switch from the account menu.
+
 `seed_demo` creates `operator@…` and `viewer@…` accounts next to the owner (same password).
 Add people with `uv run python manage.py add_member EMAIL --role operator` (password from
 `$MEMBER_PASSWORD` or a prompt).

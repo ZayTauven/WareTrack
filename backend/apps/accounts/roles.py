@@ -19,6 +19,7 @@ class Ability(StrEnum):
     ASSIGN_FORKLIFT = 'forklift.assign'
     CHARGE_FORKLIFT = 'forklift.charge'
     SET_DOCK_STATE = 'dock.state'
+    MANAGE_MEMBERS = 'members.manage'
 
 
 REQUIRED_ROLE: dict[Ability, str] = {
@@ -26,6 +27,7 @@ REQUIRED_ROLE: dict[Ability, str] = {
     Ability.ASSIGN_FORKLIFT: Role.OPERATOR,
     Ability.CHARGE_FORKLIFT: Role.OPERATOR,
     Ability.SET_DOCK_STATE: Role.ADMIN,
+    Ability.MANAGE_MEMBERS: Role.ADMIN,
 }
 
 
